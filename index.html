@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)file:///C:/Users/PC2405/Downloads/index_4.html -->
+<html lang="ko"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="플리츠미 차량">
+<meta name="theme-color" content="#1D9E75">
+<link rel="apple-touch-icon" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 100 100&#39;&gt;&lt;rect width=&#39;100&#39; height=&#39;100&#39; rx=&#39;20&#39; fill=&#39;%231D9E75&#39;/&gt;&lt;text y=&#39;.9em&#39; font-size=&#39;80&#39; x=&#39;10&#39;&gt;%F0%9F%9A%97&lt;/text&gt;&lt;/svg&gt;">
+<title>🚗 플리츠미 차량 예약</title>
+<style>
+:root{
+  --green:#1D9E75;--green-light:#E1F5EE;--green-dark:#0F6E56;
+  --red:#E8503A;--red-light:#FFF0EE;
+  --blue:#3B82F6;--blue-light:#EFF6FF;
+  --purple:#8B5CF6;--purple-light:#F5F3FF;
+  --orange:#F59E0B;--orange-light:#FFFBEB;
+  --bg:#F5F5F3;--card:#FFFFFF;--border:#E8E8E5;
+  --text:#1A1A1A;--text2:#666;--text3:#AAA;
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:90px;}
+.hdr{background:var(--card);padding:14px 16px 0;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.hdr-title{font-size:17px;font-weight:700;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.hdr-date{font-size:11px;color:var(--text2);background:var(--bg);padding:4px 10px;border-radius:20px;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.sync-dot.online{background:var(--green);}
+.sync-dot.syncing{background:var(--orange);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;cursor:pointer;color:var(--text3);font-size:10px;gap:3px;transition:color 0.15s;}
+.bnav-item.active{color:var(--green);}
+.bnav-icon{font-size:20px;line-height:1;}
+.content{padding:14px;}
+.card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.card-title{font-size:14px;font-weight:600;margin-bottom:12px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:4px;}
+.stat-val{font-size:26px;font-weight:700;}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.vcard{background:var(--bg);border:2px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all 0.15s;}
+.vcard.selected{border-color:var(--green);background:var(--green-light);}
+.vcard.conflict{border-color:var(--red);background:var(--red-light);cursor:not-allowed;}
+.badge{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;}
+.badge-green{background:var(--green-light);color:var(--green-dark);}
+.badge-red{background:var(--red-light);color:var(--red);}
+.badge-blue{background:var(--blue-light);color:var(--blue);}
+.badge-purple{background:var(--purple-light);color:var(--purple);}
+.fgroup{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fgroup label{font-size:12px;font-weight:500;color:var(--text2);}
+.fgroup input,.fgroup select,.fgroup textarea{font-size:16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;}
+.fgroup input:focus,.fgroup select:focus{outline:none;border-color:var(--green);}
+.fgroup textarea{height:70px;resize:none;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.dt-block{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;}
+.dt-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;}
+.dt-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.dt-inner .fgroup{margin-bottom:0;}
+.dt-sep{text-align:center;font-size:20px;color:var(--text3);margin:0 0 12px;}
+.duration-row{text-align:center;margin-bottom:14px;}
+.duration-badge{display:inline-block;background:var(--purple-light);color:var(--purple);font-size:13px;font-weight:500;padding:6px 16px;border-radius:20px;}
+.btn{width:100%;padding:14px;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;border:none;}
+.btn-primary{background:var(--green);color:white;}
+.btn-primary:disabled{background:var(--text3);cursor:not-allowed;}
+.btn-outline{background:var(--card);color:var(--text);border:1.5px solid var(--border);font-size:14px;padding:10px;}
+.btn-sm{width:auto;padding:7px 14px;font-size:13px;border-radius:var(--radius-sm);}
+.btn-red{background:var(--red-light);color:var(--red);border:1.5px solid #FCA99A;}
+.tl-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.tl-nav-btn{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:13px;cursor:pointer;color:var(--text2);}
+.tl-date-lbl{font-size:13px;font-weight:600;}
+.tl-row{display:flex;align-items:center;margin-bottom:5px;gap:6px;}
+.tl-v-label{width:58px;flex-shrink:0;}
+.tl-v-icon{font-size:13px;}
+.tl-v-name{font-size:10px;font-weight:600;line-height:1.2;}
+.tl-v-num{font-size:9px;color:var(--text3);}
+.tl-bar{flex:1;position:relative;height:30px;background:var(--bg);border-radius:6px;overflow:hidden;}
+.tl-block{position:absolute;top:3px;bottom:3px;border-radius:4px;display:flex;align-items:center;overflow:hidden;}
+.tl-block-txt{font-size:9px;font-weight:600;color:white;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-new{position:absolute;top:3px;bottom:3px;background:rgba(29,158,117,0.2);border:2px dashed var(--green);border-radius:4px;pointer-events:none;}
+.tl-new.conflict{background:rgba(232,80,58,0.15);border-color:var(--red);}
+.tl-now{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:5;}
+.tl-legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.tl-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);}
+.tl-legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.res-item{background:var(--card);border-radius:var(--radius);padding:13px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.res-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.res-vehicle{font-size:14px;font-weight:600;}
+.res-meta{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.6;}
+.res-time{font-size:12px;font-weight:500;margin-top:4px;}
+.hbar-row{margin-bottom:10px;}
+.hbar-meta{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+.hbar-track{height:8px;background:var(--bg);border-radius:4px;}
+.hbar-fill{height:8px;background:var(--green);border-radius:4px;}
+.maint-form{background:var(--green-light);border:1.5px solid #5DCAA5;border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+.success{background:var(--green-light);color:var(--green-dark);padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;margin-bottom:14px;}
+.bar-wrap{display:flex;align-items:flex-end;gap:5px;height:90px;margin-bottom:6px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.bar-cnt{font-size:11px;color:var(--text2);}
+.bar-body{width:100%;background:var(--green);border-radius:3px 3px 0 0;}
+.bar-lbl{font-size:9px;color:var(--text3);}
+.empty{text-align:center;padding:24px;color:var(--text3);font-size:13px;}
+.section-lbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+.today-tag{display:inline-block;font-size:10px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:20px;margin-left:5px;vertical-align:middle;}
+.loading{text-align:center;padding:40px;color:var(--text3);font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-title">🚗 플리츠미 차량 예약</div>
+    <div class="hdr-right">
+      <div class="sync-dot online" id="sync-dot" title="실시간 연결됨"></div>
+      <div class="hdr-date" id="today-date">2026년 5월 6일 수</div>
+    </div>
+  </div>
+</div>
+
+<div class="content" id="content">
+    
+    <div class="card"><div class="section-lbl">📅 날짜별 차량 현황</div><div>
+    <div class="tl-nav">
+      <button class="tl-nav-btn" onclick="tlPrev()">◀ 전날</button>
+      <div class="tl-date-lbl">5월 6일 (수)<span class="today-tag">오늘</span></div>
+      <button class="tl-nav-btn" onclick="tlNext()">다음날 ▶</button>
+    </div>
+    <div style="display:flex;margin-left:64px;margin-bottom:2px">
+      <div style="flex:1;font-size:9px;color:var(--text3)"></div><div style="flex:1;font-size:9px;color:var(--text3)">6시</div><div style="flex:1;font-size:9px;color:var(--text3)">12시</div><div style="flex:1;font-size:9px;color:var(--text3)">18시</div><div style="flex:1;font-size:9px;color:var(--text3)">24시</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-v-label">
+        <div class="tl-v-icon">🚙</div>
+        <div class="tl-v-name" style="color:inherit">QM6</div>
+        <div class="tl-v-num">823가 5814</div>
+      </div>
+      <div class="tl-bar"><div style="position:absolute;top:0;bottom:0;left:0%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:25%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:50%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:75%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:100%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div class="tl-now" style="left:48.26388888888889%"></div></div>
+    </div><div class="tl-row">
+      <div class="tl-v-label">
+        <div class="tl-v-icon">🚐</div>
+        <div class="tl-v-name" style="color:inherit">스타리아</div>
+        <div class="tl-v-num">839오 9280</div>
+      </div>
+      <div class="tl-bar"><div style="position:absolute;top:0;bottom:0;left:0%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:25%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:50%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:75%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:100%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div class="tl-now" style="left:48.26388888888889%"></div></div>
+    </div><div class="tl-row">
+      <div class="tl-v-label">
+        <div class="tl-v-icon">🚐</div>
+        <div class="tl-v-name" style="color:inherit">스타렉스</div>
+        <div class="tl-v-num">83모 0929</div>
+      </div>
+      <div class="tl-bar"><div style="position:absolute;top:0;bottom:0;left:0%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:25%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:50%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:75%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:100%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div class="tl-now" style="left:48.26388888888889%"></div></div>
+    </div><div class="tl-row">
+      <div class="tl-v-label">
+        <div class="tl-v-icon">🚗</div>
+        <div class="tl-v-name" style="color:inherit">레이</div>
+        <div class="tl-v-num">152무 2910</div>
+      </div>
+      <div class="tl-bar"><div style="position:absolute;top:0;bottom:0;left:0%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:25%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:50%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:75%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:100%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div class="tl-now" style="left:48.26388888888889%"></div></div>
+    </div><div class="tl-row">
+      <div class="tl-v-label">
+        <div class="tl-v-icon">🚙</div>
+        <div class="tl-v-name" style="color:inherit">G4렉스턴</div>
+        <div class="tl-v-num">08라 3583</div>
+      </div>
+      <div class="tl-bar"><div style="position:absolute;top:0;bottom:0;left:0%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:25%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:50%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:75%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div style="position:absolute;top:0;bottom:0;left:100%;width:0.5px;background:rgba(0,0,0,0.1)"></div><div class="tl-now" style="left:48.26388888888889%"></div></div>
+    </div>
+    <div class="tl-legend">
+      <div class="tl-legend-item"><div class="tl-legend-dot" style="background:#3B82F6"></div>QM6</div><div class="tl-legend-item"><div class="tl-legend-dot" style="background:#8B5CF6"></div>스타리아</div><div class="tl-legend-item"><div class="tl-legend-dot" style="background:#F59E0B"></div>스타렉스</div><div class="tl-legend-item"><div class="tl-legend-dot" style="background:#10B981"></div>레이</div><div class="tl-legend-item"><div class="tl-legend-dot" style="background:#EF4444"></div>G4렉스턴</div>
+      <div class="tl-legend-item"><div class="tl-legend-dot" style="background:rgba(29,158,117,0.3);border:1.5px dashed var(--green)"></div>신청중</div>
+      <div class="tl-legend-item"><div class="tl-legend-dot" style="background:var(--red)"></div>현재시각</div>
+    </div>
+  </div></div>
+    <div class="card">
+      <div class="card-title">차량 선택</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">출발·반납 시간 입력 후 가능 여부 표시</div>
+      <div class="vcard  " onclick="selectVehicle(&#39;v1&#39;)">
+      <div style="font-size:28px;flex-shrink:0">🚙</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:inherit">QM6</div>
+        <div style="font-size:12px;color:var(--text2)">823가 5814 · 5인승</div>
+        <div style="font-size:12px;margin-top:4px"><span style="color:var(--text3)">예약 가능</span></div>
+      </div>
+      <div style="font-size:20px"></div>
+    </div><div class="vcard  " onclick="selectVehicle(&#39;v2&#39;)">
+      <div style="font-size:28px;flex-shrink:0">🚐</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:inherit">스타리아</div>
+        <div style="font-size:12px;color:var(--text2)">839오 9280 · 9인승</div>
+        <div style="font-size:12px;margin-top:4px"><span style="color:var(--text3)">예약 가능</span></div>
+      </div>
+      <div style="font-size:20px"></div>
+    </div><div class="vcard  " onclick="selectVehicle(&#39;v3&#39;)">
+      <div style="font-size:28px;flex-shrink:0">🚐</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:inherit">스타렉스</div>
+        <div style="font-size:12px;color:var(--text2)">83모 0929 · 9인승</div>
+        <div style="font-size:12px;margin-top:4px"><span style="color:var(--text3)">예약 가능</span></div>
+      </div>
+      <div style="font-size:20px"></div>
+    </div><div class="vcard  " onclick="selectVehicle(&#39;v4&#39;)">
+      <div style="font-size:28px;flex-shrink:0">🚗</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:inherit">레이</div>
+        <div style="font-size:12px;color:var(--text2)">152무 2910 · 4인승</div>
+        <div style="font-size:12px;margin-top:4px"><span style="color:var(--text3)">예약 가능</span></div>
+      </div>
+      <div style="font-size:20px"></div>
+    </div><div class="vcard  " onclick="selectVehicle(&#39;v5&#39;)">
+      <div style="font-size:28px;flex-shrink:0">🚙</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:inherit">G4렉스턴</div>
+        <div style="font-size:12px;color:var(--text2)">08라 3583 · 7인승</div>
+        <div style="font-size:12px;margin-top:4px"><span style="color:var(--text3)">예약 가능</span></div>
+      </div>
+      <div style="font-size:20px"></div>
+    </div>
+    </div>
+    <div class="card">
+      <div class="card-title">예약 정보 입력</div>
+      
+      <div class="frow">
+        <div class="fgroup"><label>이름</label><input type="text" value="" placeholder="홍길동" oninput="SF(&#39;user&#39;,this.value)"></div>
+        <div class="fgroup"><label>부서</label><select onchange="SF(&#39;dept&#39;,this.value)">
+          <option value="">선택</option><option>영업 BU</option><option>홈쇼핑 BU</option><option>온라인 BU</option><option>경영지원 BU</option><option>디자인 BU</option><option>상품전략 BU</option><option>물류운영 BU</option><option>임원</option>
+        </select></div>
+      </div>
+      <div class="dt-block">
+        <div class="dt-label">🚀 출발</div>
+        <div class="dt-inner">
+          <div class="fgroup"><label>날짜</label><input type="date" value="2026-05-06" min="2026-05-06" onchange="SF(&#39;startDate&#39;,this.value);S.tlDate=this.value;if(S.form.endDate&lt;this.value)SF(&#39;endDate&#39;,this.value);render()"></div>
+          <div class="fgroup"><label>시간</label><input type="time" value="" onchange="SF(&#39;startTime&#39;,this.value);render()"></div>
+        </div>
+      </div>
+      <div class="dt-sep">↓</div>
+      <div class="dt-block">
+        <div class="dt-label">🏁 반납</div>
+        <div class="dt-inner">
+          <div class="fgroup"><label>날짜</label><input type="date" value="2026-05-06" min="2026-05-06" onchange="SF(&#39;endDate&#39;,this.value);render()"></div>
+          <div class="fgroup"><label>시간</label><input type="time" value="" onchange="SF(&#39;endTime&#39;,this.value);render()"></div>
+        </div>
+      </div>
+      
+      <div class="fgroup"><label>목적지</label><input type="text" value="" placeholder="예) 동대문 원단시장" oninput="SF(&#39;destination&#39;,this.value)"></div>
+      <div class="fgroup"><label>사용 목적</label><input type="text" value="" placeholder="예) 거래처 방문" oninput="SF(&#39;purpose&#39;,this.value)"></div>
+      <div class="fgroup"><label>비고 (선택)</label><input type="text" value="" placeholder="탑승 인원, 특이사항" oninput="SF(&#39;note&#39;,this.value)"></div>
+      <button class="btn btn-primary" onclick="submitRes()" disabled="">
+        차량을 먼저 선택해주세요
+      </button>
+      
+    </div></div>
+
+<nav class="bnav">
+  <div class="bnav-item active" onclick="switchTab(&#39;reserve&#39;)" id="nav-reserve"><div class="bnav-icon">📝</div><div>예약신청</div></div>
+  <div class="bnav-item" onclick="switchTab(&#39;schedule&#39;)" id="nav-schedule"><div class="bnav-icon">📅</div><div>예약현황</div></div>
+  <div class="bnav-item" onclick="switchTab(&#39;dashboard&#39;)" id="nav-dashboard"><div class="bnav-icon">🏠</div><div>대시보드</div></div>
+  <div class="bnav-item" onclick="switchTab(&#39;fleet&#39;)" id="nav-fleet"><div class="bnav-icon">🔧</div><div>차량정비</div></div>
+  <div class="bnav-item" onclick="switchTab(&#39;report&#39;)" id="nav-report"><div class="bnav-icon">📊</div><div>리포트</div></div>
+</nav>
+
+<!-- Firebase SDK -->
+<script src="./index_files/firebase-app-compat.js.다운로드"></script>
+<script src="./index_files/firebase-database-compat.js.다운로드"></script>
+
+<script>
+/* ───── FIREBASE 설정 (실패해도 앱은 동작) ───── */
+let db = null;
+try {
+  const firebaseConfig = {
+    apiKey: "AIzaSyDWGrSrq6GjbIOGgBI3jNFI3rbJGUzc7Pw",
+    authDomain: "pleatsme-car.firebaseapp.com",
+    databaseURL: "https://pleatsme-car-default-rtdb.firebaseio.com",
+    projectId: "pleatsme-car",
+    storageBucket: "pleatsme-car.firebasestorage.app",
+    messagingSenderId: "526519414783",
+    appId: "1:526519414783:web:d1b41168e972bdda2941ca"
+  };
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+} catch(e) {
+  console.log('Firebase 초기화 실패, 로컬 모드로 실행:', e);
+}
+
+/* ───── 데이터 ───── */
+const VEHICLES=[
+  {id:'v1',name:'QM6',      number:'823가 5814',seats:5, icon:'🚙',color:'#3B82F6'},
+  {id:'v2',name:'스타리아', number:'839오 9280',seats:9, icon:'🚐',color:'#8B5CF6'},
+  {id:'v3',name:'스타렉스', number:'83모 0929', seats:9, icon:'🚐',color:'#F59E0B'},
+  {id:'v4',name:'레이',     number:'152무 2910',seats:4, icon:'🚗',color:'#10B981'},
+  {id:'v5',name:'G4렉스턴', number:'08라 3583', seats:7, icon:'🚙',color:'#EF4444'},
+];
+const DEPTS=['영업 BU','홈쇼핑 BU','온라인 BU','경영지원 BU','디자인 BU','상품전략 BU','물류운영 BU','임원'];
+const MAINT_TYPES=['정기점검','엔진오일 교체','타이어 교체','세차·실내청소','소모품 교체','사고수리','기타'];
+
+let S={
+  tab:'reserve',
+  reservations:[],
+  maintenance:[],
+  filterDept:'all',filterVehicle:'all',
+  successMsg:'',
+  tlDate:todayStr(),
+  form:{vehicleId:'',user:'',dept:'',startDate:todayStr(),startTime:'',endDate:todayStr(),endTime:'',destination:'',purpose:'',note:''},
+  maintForm:{vehicleId:'',date:todayStr(),type:'',description:'',shop:'',cost:'',mileage:''},
+  showMaintForm:null,
+  editingResId:null,
+  loaded:true,
+};
+
+/* ───── FIREBASE 실시간 연동 ───── */
+function setSyncStatus(status){
+  const dot=document.getElementById('sync-dot');
+  if(!dot)return;
+  dot.className='sync-dot '+(status==='online'?'online':status==='syncing'?'syncing':'');
+  dot.title=status==='online'?'실시간 연결됨':status==='syncing'?'동기화 중...':'연결 끊김';
+}
+
+function fbSaveRes(res){
+  // 로컬 저장
+  const idx=S.reservations.findIndex(r=>r.id===res.id);
+  if(idx>=0) S.reservations[idx]=res; else S.reservations.push(res);
+  try{localStorage.setItem('pm_res',JSON.stringify(S.reservations));}catch(e){}
+  // Firebase 저장 (연결된 경우)
+  if(db){setSyncStatus('syncing');db.ref('reservations/'+res.id).set(res).then(()=>setSyncStatus('online')).catch(()=>setSyncStatus('offline'));}
+}
+function fbDeleteRes(id){
+  S.reservations=S.reservations.filter(r=>r.id!==id);
+  try{localStorage.setItem('pm_res',JSON.stringify(S.reservations));}catch(e){}
+  if(db){setSyncStatus('syncing');db.ref('reservations/'+id).remove().then(()=>setSyncStatus('online')).catch(()=>setSyncStatus('offline'));}
+}
+function fbSaveMaint(m){
+  const idx=S.maintenance.findIndex(x=>x.id===m.id);
+  if(idx>=0) S.maintenance[idx]=m; else S.maintenance.push(m);
+  try{localStorage.setItem('pm_maint',JSON.stringify(S.maintenance));}catch(e){}
+  if(db){setSyncStatus('syncing');db.ref('maintenance/'+m.id).set(m).then(()=>setSyncStatus('online')).catch(()=>setSyncStatus('offline'));}
+}
+
+/* ───── 유틸 ───── */
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function getV(id){return VEHICLES.find(v=>v.id===id);}
+function korDate(d){return new Date(d+'T12:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});}
+function addDays(d,n){const dt=new Date(d+'T12:00:00');dt.setDate(dt.getDate()+n);return dt.toISOString().split('T')[0];}
+function calcDuration(sd,st,ed,et){
+  if(!sd||!st||!ed||!et)return null;
+  const diff=(new Date(`${ed}T${et}`)-new Date(`${sd}T${st}`))/60000;
+  if(diff<=0)return null;
+  const days=Math.floor(diff/1440),hrs=Math.floor((diff%1440)/60),mins=diff%60;
+  if(days>0)return`${days}박${hrs>0?' '+hrs+'시간':''}`;
+  return hrs>0?(mins>0?`${hrs}시간 ${mins}분`:`${hrs}시간`):`${mins}분`;
+}
+function isOverlap(s1d,s1t,e1d,e1t,s2d,s2t,e2d,e2t){
+  return new Date(`${s1d}T${s1t}`)<new Date(`${e2d}T${e2t}`)&&new Date(`${s2d}T${s2t}`)<new Date(`${e1d}T${e1t}`);
+}
+function getConflicts(vid,sd,st,ed,et,xid=''){
+  return S.reservations.filter(r=>r.id!==xid&&r.vehicleId===vid&&r.status==='confirmed'&&isOverlap(sd,st,ed,et,r.startDate,r.startTime,r.endDate,r.endTime));
+}
+function isMultiDay(r){return r.startDate!==r.endDate;}
+
+/* ───── 타임라인 ───── */
+function buildTimeline(viewDate,form){
+  const HOURS=24;
+  function toFrac(rDate,rTime){
+    if(rDate<viewDate)return 0;
+    if(rDate>viewDate)return 100;
+    const h=parseInt(rTime.split(':')[0]),m=parseInt(rTime.split(':')[1]);
+    return(h+m/60)/HOURS*100;
+  }
+  const now=new Date(),t=todayStr();
+  const nowPct=viewDate===t?(now.getHours()+now.getMinutes()/60)/HOURS*100:null;
+  let newBlocks={};
+  if(form.startDate&&form.startTime&&form.endDate&&form.endTime){
+    VEHICLES.forEach(v=>{
+      if(form.startDate<=viewDate&&form.endDate>=viewDate){
+        const l=toFrac(form.startDate,form.startTime);
+        const r=toFrac(form.endDate,form.endTime);
+        if(r>l)newBlocks[v.id]={left:l,width:r-l};
+      }
+    });
+  }
+  const ticks=[0,6,12,18,24];
+  const rows=VEHICLES.map(v=>{
+    const recs=S.reservations.filter(r=>r.vehicleId===v.id&&r.status==='confirmed'&&r.startDate<=viewDate&&r.endDate>=viewDate);
+    const nb=newBlocks[v.id];
+    const hasConflict=nb&&recs.some(r=>{
+      const rl=toFrac(r.startDate,r.startTime),rr=toFrac(r.endDate,r.endTime);
+      return nb.left<rr&&rl<nb.left+nb.width;
+    });
+    const isSelected=form.vehicleId===v.id;
+    const blocks=recs.map(r=>{
+      const l=toFrac(r.startDate,r.startTime),w=toFrac(r.endDate,r.endTime)-l;
+      if(w<=0)return'';
+      return`<div class="tl-block" style="left:${l}%;width:${w}%;background:${v.color}"><span class="tl-block-txt">${r.user} ${r.destination}</span></div>`;
+    }).join('');
+    const newB=nb?`<div class="tl-new ${hasConflict?'conflict':''}" style="left:${nb.left}%;width:${nb.width}%"></div>`:'';
+    const nowLine=nowPct!==null?`<div class="tl-now" style="left:${nowPct}%"></div>`:'';
+    const tickLines=ticks.map(h=>`<div style="position:absolute;top:0;bottom:0;left:${h/HOURS*100}%;width:0.5px;background:rgba(0,0,0,0.1)"></div>`).join('');
+    return`<div class="tl-row">
+      <div class="tl-v-label">
+        <div class="tl-v-icon">${v.icon}</div>
+        <div class="tl-v-name" style="color:${isSelected?'var(--green)':'inherit'}">${v.name}</div>
+        <div class="tl-v-num">${v.number}</div>
+      </div>
+      <div class="tl-bar">${tickLines}${nowLine}${blocks}${newB}</div>
+    </div>`;
+  }).join('');
+  const korDs=new Date(viewDate+'T12:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+  return`<div>
+    <div class="tl-nav">
+      <button class="tl-nav-btn" onclick="tlPrev()">◀ 전날</button>
+      <div class="tl-date-lbl">${korDs}${viewDate===todayStr()?'<span class="today-tag">오늘</span>':''}</div>
+      <button class="tl-nav-btn" onclick="tlNext()">다음날 ▶</button>
+    </div>
+    <div style="display:flex;margin-left:64px;margin-bottom:2px">
+      ${ticks.map(h=>`<div style="flex:1;font-size:9px;color:var(--text3)">${h===0?'':h+'시'}</div>`).join('')}
+    </div>
+    ${rows}
+    <div class="tl-legend">
+      ${VEHICLES.map(v=>`<div class="tl-legend-item"><div class="tl-legend-dot" style="background:${v.color}"></div>${v.name}</div>`).join('')}
+      <div class="tl-legend-item"><div class="tl-legend-dot" style="background:rgba(29,158,117,0.3);border:1.5px dashed var(--green)"></div>신청중</div>
+      ${nowPct!==null?'<div class="tl-legend-item"><div class="tl-legend-dot" style="background:var(--red)"></div>현재시각</div>':''}
+    </div>
+  </div>`;
+}
+
+/* ───── 탭 전환 ───── */
+function switchTab(tab){
+  S.tab=tab;S.successMsg='';
+  ['reserve','schedule','dashboard','fleet','report'].forEach(t=>{
+    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  });
+  render();window.scrollTo(0,0);
+}
+function render(){
+  document.getElementById('content').innerHTML=({
+    reserve:renderReserve,schedule:renderSchedule,
+    dashboard:renderDashboard,fleet:renderFleet,report:renderReport
+  }[S.tab]||renderReserve)();
+}
+
+/* ───── 예약신청 ───── */
+function renderReserve(){
+  const f=S.form;
+  const dur=calcDuration(f.startDate,f.startTime,f.endDate,f.endTime);
+  const vcards=VEHICLES.map(v=>{
+    const conflicts=(f.startDate&&f.startTime&&f.endDate&&f.endTime)?getConflicts(v.id,f.startDate,f.startTime,f.endDate,f.endTime):[];
+    const hasConflict=conflicts.length>0;
+    const isSelected=f.vehicleId===v.id;
+    return`<div class="vcard ${isSelected?'selected':''} ${hasConflict?'conflict':''}" onclick="selectVehicle('${v.id}')">
+      <div style="font-size:28px;flex-shrink:0">${v.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600;color:${hasConflict?'var(--red)':isSelected?'var(--green)':'inherit'}">${v.name}</div>
+        <div style="font-size:12px;color:var(--text2)">${v.number} · ${v.seats}인승</div>
+        <div style="font-size:12px;margin-top:4px">${hasConflict?`<span style="color:var(--red)">✕ ${conflicts[0].user}(${conflicts[0].dept}) 예약중</span>`:isSelected?'<span style="color:var(--green)">✓ 선택됨</span>':'<span style="color:var(--text3)">예약 가능</span>'}</div>
+      </div>
+      <div style="font-size:20px">${hasConflict?'🚫':isSelected?'✅':''}</div>
+    </div>`;
+  }).join('');
+  return`
+    ${S.successMsg?`<div class="success">✓ ${S.successMsg}</div>`:''}
+    <div class="card"><div class="section-lbl">📅 날짜별 차량 현황</div>${buildTimeline(S.tlDate,f)}</div>
+    <div class="card">
+      <div class="card-title">차량 선택</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${f.startDate&&f.startTime&&f.endDate&&f.endTime?'<span style="color:var(--green)">✓ 선택 기간 기준 예약 가능 여부</span>':'출발·반납 시간 입력 후 가능 여부 표시'}</div>
+      ${vcards}
+    </div>
+    <div class="card">
+      <div class="card-title">${S.editingResId ? '✏️ 예약 수정' : '예약 정보 입력'}</div>
+      ${S.editingResId ? `<div style="background:var(--blue-light);color:var(--blue);padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:12px">수정 중입니다. 변경 후 아래 버튼을 눌러주세요.</div>` : ''}
+      <div class="frow">
+        <div class="fgroup"><label>이름</label><input type="text" value="${f.user}" placeholder="홍길동" oninput="SF('user',this.value)"></div>
+        <div class="fgroup"><label>부서</label><select onchange="SF('dept',this.value)">
+          <option value="">선택</option>${DEPTS.map(d=>`<option ${f.dept===d?'selected':''}>${d}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="dt-block">
+        <div class="dt-label">🚀 출발</div>
+        <div class="dt-inner">
+          <div class="fgroup"><label>날짜</label><input type="date" value="${f.startDate}" min="${todayStr()}" onchange="SF('startDate',this.value);S.tlDate=this.value;if(S.form.endDate<this.value)SF('endDate',this.value);render()"></div>
+          <div class="fgroup"><label>시간</label><input type="time" value="${f.startTime}" onchange="SF('startTime',this.value);render()"></div>
+        </div>
+      </div>
+      <div class="dt-sep">↓</div>
+      <div class="dt-block">
+        <div class="dt-label">🏁 반납</div>
+        <div class="dt-inner">
+          <div class="fgroup"><label>날짜</label><input type="date" value="${f.endDate}" min="${f.startDate||todayStr()}" onchange="SF('endDate',this.value);render()"></div>
+          <div class="fgroup"><label>시간</label><input type="time" value="${f.endTime}" onchange="SF('endTime',this.value);render()"></div>
+        </div>
+      </div>
+      ${dur?`<div class="duration-row"><span class="duration-badge">⏱ 총 사용 ${dur}${isMultiDay(f)?' · 다박':''}</span></div>`:''}
+      <div class="fgroup"><label>목적지</label><input type="text" value="${f.destination}" placeholder="예) 동대문 원단시장" oninput="SF('destination',this.value)"></div>
+      <div class="fgroup"><label>사용 목적</label><input type="text" value="${f.purpose}" placeholder="예) 거래처 방문" oninput="SF('purpose',this.value)"></div>
+      <div class="fgroup"><label>비고 (선택)</label><input type="text" value="${f.note}" placeholder="탑승 인원, 특이사항" oninput="SF('note',this.value)"></div>
+      <button class="btn btn-primary" onclick="submitRes()" ${!f.vehicleId?'disabled':''}>
+        ${S.editingResId
+          ? `✏️ ${getV(f.vehicleId)?.name||''} 예약 수정 완료`
+          : f.vehicleId?`${getV(f.vehicleId)?.icon} ${getV(f.vehicleId)?.name} 예약 확정`:'차량을 먼저 선택해주세요'}
+      </button>
+      ${S.editingResId ? `<button class="btn btn-outline" style="margin-top:8px" onclick="cancelEdit()">수정 취소</button>` : ''}
+    </div>`;
+}
+
+/* ───── 예약현황 ───── */
+function renderSchedule(){
+  let list=S.reservations.filter(r=>r.status==='confirmed');
+  if(S.filterDept!=='all')list=list.filter(r=>r.dept===S.filterDept);
+  if(S.filterVehicle!=='all')list=list.filter(r=>r.vehicleId===S.filterVehicle);
+  list=[...list].sort((a,b)=>a.startDate.localeCompare(b.startDate)||a.startTime.localeCompare(b.startTime));
+  const t=todayStr();
+  const upcoming=list.filter(r=>r.endDate>=t);
+  const past=list.filter(r=>r.endDate<t);
+  return`
+    <div class="card" style="padding:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <select style="font-size:13px;padding:9px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card)" onchange="S.filterDept=this.value;render()">
+          <option value="all">전체 부서</option>${DEPTS.map(d=>`<option ${S.filterDept===d?'selected':''}>${d}</option>`).join('')}
+        </select>
+        <select style="font-size:13px;padding:9px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--card)" onchange="S.filterVehicle=this.value;render()">
+          <option value="all">전체 차량</option>${VEHICLES.map(v=>`<option value="${v.id}" ${S.filterVehicle===v.id?'selected':''}>${v.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="section-lbl">예정 예약 (${upcoming.length}건)</div>
+    ${upcoming.length===0?'<div class="empty">예정된 예약이 없습니다</div>':upcoming.map(r=>{
+      const v=getV(r.vehicleId);const dur=calcDuration(r.startDate,r.startTime,r.endDate,r.endTime);
+      const now=new Date();
+      const isActive=new Date(r.startDate+'T'+r.startTime)<=now&&new Date(r.endDate+'T'+r.endTime)>=now;
+      return`<div class="res-item" style="${isActive?'border-left:3px solid var(--green)':''}">
+        ${isActive?`<div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:6px">🚗 현재 사용중</div>`:''}
+        <div class="res-top">
+          <div style="flex:1">
+            <div class="res-vehicle"><span style="color:${v?.color}">${v?.icon}</span> ${v?.name} → ${r.destination}${isMultiDay(r)?'<span class="badge badge-purple" style="margin-left:4px;font-size:10px">다박</span>':''}</div>
+            <div class="res-meta">${r.user} · <strong style="color:var(--text)">${r.dept}</strong>${r.note?` · ${r.note}`:''}</div>
+            <div class="res-time">🚀 ${korDate(r.startDate)} <strong>${r.startTime}</strong> → 🏁 ${r.startDate!==r.endDate?korDate(r.endDate)+' ':''}<strong>${r.endTime}</strong>${dur?` <span class="badge badge-purple">${dur}</span>`:''}</div>
+            ${r.purpose?`<div class="res-meta">📍 ${r.purpose}</div>`:''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            ${isActive?`<button class="btn btn-sm" style="background:var(--green);color:white;border:none;width:auto" onclick="returnVehicle('${r.id}')">🏁 반납</button>`:''}
+            <button class="btn btn-sm" style="background:var(--blue-light);color:var(--blue);border:1.5px solid #93C5FD;width:auto" onclick="editRes('${r.id}')">수정</button>
+            <button class="btn btn-sm btn-red" onclick="cancelRes('${r.id}')">취소</button>
+          </div>
+        </div>
+      </div>`;}).join('')}
+    ${past.length>0?`<div class="divider"></div><div class="section-lbl">지난 예약</div>${past.slice().reverse().slice(0,5).map(r=>{const v=getV(r.vehicleId);return`<div class="res-item" style="opacity:0.5"><div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div><div class="res-meta">${r.user} (${r.dept}) · ${r.startDate} ${r.startTime}~${r.endTime}</div></div>`;}).join('')}`:''}`;
+}
+
+/* ───── 대시보드 ───── */
+function renderDashboard(){
+  const t=todayStr();
+  const todayRes=S.reservations.filter(r=>r.status==='confirmed'&&r.startDate<=t&&r.endDate>=t);
+  const deptCounts=DEPTS.map(d=>({name:d,cnt:S.reservations.filter(r=>r.dept===d&&r.status==='confirmed').length}));
+  const maxD=Math.max(...deptCounts.map(d=>d.cnt),1);
+  return`
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">전체 예약</div><div class="stat-val">${S.reservations.filter(r=>r.status==='confirmed').length}</div><div class="stat-sub">확정 건수</div></div>
+      <div class="stat-card"><div class="stat-label">오늘 운행중</div><div class="stat-val" style="color:var(--green)">${todayRes.length}</div><div class="stat-sub">${t}</div></div>
+      <div class="stat-card"><div class="stat-label">이번 달</div><div class="stat-val">${S.reservations.filter(r=>r.startDate.startsWith(t.slice(0,7))&&r.status==='confirmed').length}</div></div>
+      <div class="stat-card"><div class="stat-label">보유 차량</div><div class="stat-val">${VEHICLES.length}</div><div class="stat-sub">대</div></div>
+    </div>
+    <div class="card"><div class="section-lbl">오늘 차량 현황</div>${buildTimeline(t,{})}</div>
+    <div class="card">
+      <div class="card-title">오늘 운행 일정</div>
+      ${todayRes.length===0?'<div class="empty">오늘 예약 없음</div>':todayRes.map(r=>{const v=getV(r.vehicleId);return`<div style="padding:8px 0;border-bottom:1px solid var(--border)"><div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div><div class="res-meta">${r.user} (${r.dept}) · ${r.startTime}~${r.endTime}</div></div>`;}).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">부서별 사용 현황</div>
+      ${deptCounts.filter(d=>d.cnt>0).length===0?'<div class="empty">아직 예약 없음</div>':deptCounts.map(d=>`<div class="hbar-row"><div class="hbar-meta"><span style="font-size:12px">${d.name}</span><span style="font-weight:600">${d.cnt}건</span></div><div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(d.cnt/maxD*100)}%"></div></div></div>`).join('')}
+    </div>`;
+}
+
+/* ───── 차량정비 ───── */
+function renderFleet(){
+  return VEHICLES.map(v=>{
+    const mrecs=S.maintenance.filter(m=>m.vehicleId===v.id).sort((a,b)=>b.date.localeCompare(a.date));
+    return`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="font-size:28px">${v.icon}</div>
+          <div><div style="font-size:15px;font-weight:700">${v.name}</div><div style="font-size:12px;color:var(--text2)">${v.number} · ${v.seats}인승</div></div>
+        </div>
+        <button class="btn btn-sm btn-outline" style="width:auto" onclick="toggleMF('${v.id}')">+ 정비</button>
+      </div>
+      ${S.showMaintForm===v.id?renderMaintForm(v):''}
+      <div class="section-lbl">정비 히스토리</div>
+      ${mrecs.length===0?'<div class="empty" style="padding:12px">정비 기록 없음</div>':mrecs.map(m=>`
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between">
+            <span class="badge badge-blue">${m.type}</span>
+            <span style="font-size:13px;font-weight:600">${m.cost}원</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${m.date} · ${m.shop} · ${m.mileage}km</div>
+          <div style="font-size:13px;margin-top:3px">${m.description}</div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+function renderMaintForm(v){
+  const mf=S.maintForm;
+  return`<div class="maint-form">
+    <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--green-dark)">${v.icon} ${v.name} 정비 등록</div>
+    <div class="frow">
+      <div class="fgroup"><label>날짜</label><input type="date" value="${mf.date||todayStr()}" onchange="MF('date',this.value)"></div>
+      <div class="fgroup"><label>유형</label><select onchange="MF('type',this.value)"><option value="">선택</option>${MAINT_TYPES.map(t=>`<option ${mf.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    </div>
+    <div class="frow">
+      <div class="fgroup"><label>정비소</label><input type="text" value="${mf.shop}" placeholder="정비소명" oninput="MF('shop',this.value)"></div>
+      <div class="fgroup"><label>비용(원)</label><input type="text" value="${mf.cost}" placeholder="150,000" oninput="MF('cost',this.value)"></div>
+    </div>
+    <div class="fgroup"><label>주행거리(km)</label><input type="text" value="${mf.mileage}" placeholder="52,300" oninput="MF('mileage',this.value)"></div>
+    <div class="fgroup"><label>내용</label><textarea oninput="MF('description',this.value)" placeholder="교체 부품, 특이사항">${mf.description}</textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-primary" onclick="submitMaint()">등록</button>
+      <button class="btn btn-outline" onclick="toggleMF(null)">취소</button>
+    </div>
+  </div>`;
+}
+
+/* ───── 리포트 ───── */
+function renderReport(){
+  const months=[];
+  for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);months.push(d.toISOString().slice(0,7));}
+  const mData=months.map(m=>({label:parseInt(m.split('-')[1])+'월',cnt:S.reservations.filter(r=>r.startDate.startsWith(m)&&r.status==='confirmed').length}));
+  const maxM=Math.max(...mData.map(d=>d.cnt),1);
+  const deptData=DEPTS.map(d=>({name:d,cnt:S.reservations.filter(r=>r.dept===d&&r.status==='confirmed').length})).sort((a,b)=>b.cnt-a.cnt);
+  const maxD=Math.max(...deptData.map(d=>d.cnt),1);
+  const totalCost=S.maintenance.reduce((s,m)=>s+parseInt((m.cost||'0').replace(/,/g,'')),0);
+  return`
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">이번 달</div><div class="stat-val">${S.reservations.filter(r=>r.startDate.startsWith(months[5])&&r.status==='confirmed').length}</div></div>
+      <div class="stat-card"><div class="stat-label">누적 예약</div><div class="stat-val">${S.reservations.filter(r=>r.status==='confirmed').length}</div></div>
+      <div class="stat-card"><div class="stat-label">정비 건수</div><div class="stat-val">${S.maintenance.length}</div></div>
+      <div class="stat-card"><div class="stat-label">정비비 합계</div><div class="stat-val" style="font-size:18px">${Math.round(totalCost/10000)}만원</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">월별 예약 현황 (최근 6개월)</div>
+      <div class="bar-wrap">${mData.map(d=>`<div class="bar-col"><div class="bar-cnt">${d.cnt}</div><div class="bar-body" style="height:${Math.max(Math.round(d.cnt/maxM*70),d.cnt?6:0)}px"></div></div>`).join('')}</div>
+      <div style="display:flex;gap:5px">${mData.map(d=>`<div class="bar-lbl" style="flex:1;text-align:center">${d.label}</div>`).join('')}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">부서별 예약 건수</div>
+      ${deptData.map(d=>`<div class="hbar-row"><div class="hbar-meta"><span style="font-size:12px">${d.name}</span><span style="font-weight:600">${d.cnt}건</span></div><div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(d.cnt/maxD*100)}%"></div></div></div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">차량별 이용 현황</div>
+      ${VEHICLES.map(v=>{const cnt=S.reservations.filter(r=>r.vehicleId===v.id&&r.status==='confirmed').length;return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:22px">${v.icon}</div><div style="flex:1"><div style="font-weight:600">${v.name}</div><div style="font-size:12px;color:var(--text2)">${v.number}</div></div><div style="font-size:18px;font-weight:700;color:var(--green)">${cnt}건</div></div>`;}).join('')}
+    </div>`;
+}
+
+/* ───── 액션 ───── */
+function returnVehicle(id){
+  if(!confirm('차량을 지금 반납하시겠습니까?\n반납 시간이 현재 시각으로 변경됩니다.'))return;
+  const r=S.reservations.find(r=>r.id===id);
+  if(!r)return;
+  const now=new Date();
+  const nowTime=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  const nowDate=now.toISOString().split('T')[0];
+  r.endDate=nowDate;
+  r.endTime=nowTime;
+  fbSaveRes(r);
+  alert('반납 완료! 수고하셨습니다 🙏');
+  render();
+}
+function selectVehicle(id){
+  const f=S.form;
+  const conflicts=(f.startDate&&f.startTime&&f.endDate&&f.endTime)?getConflicts(id,f.startDate,f.startTime,f.endDate,f.endTime):[];
+  if(conflicts.length>0){alert(getV(id)?.name+' 은 해당 기간에 이미 예약이 있습니다!');return;}
+  SF('vehicleId',id);render();
+}
+function SF(k,v){S.form[k]=v;}
+function MF(k,v){S.maintForm[k]=v;}
+function tlPrev(){S.tlDate=addDays(S.tlDate,-1);render();}
+function tlNext(){S.tlDate=addDays(S.tlDate,1);render();}
+function toggleMF(vid){
+  S.showMaintForm=(S.showMaintForm===vid)?null:vid;
+  if(vid&&S.showMaintForm)S.maintForm={vehicleId:vid,date:todayStr(),type:'',description:'',shop:'',cost:'',mileage:''};
+  render();
+}
+function submitMaint(){
+  const mf=S.maintForm;
+  if(!mf.type){alert('유형을 선택해주세요');return;}
+  if(!mf.description.trim()){alert('내용을 입력해주세요');return;}
+  const newM={id:'m'+Date.now(),...mf};
+  fbSaveMaint(newM);
+  S.showMaintForm=null;render();
+}
+function submitRes(){
+  const f=S.form;
+  if(!f.vehicleId){alert('차량을 선택해주세요');return;}
+  if(!f.user.trim()){alert('이름을 입력해주세요');return;}
+  if(!f.dept){alert('부서를 선택해주세요');return;}
+  if(!f.startDate||!f.startTime){alert('출발 날짜와 시간을 입력해주세요');return;}
+  if(!f.endDate||!f.endTime){alert('반납 날짜와 시간을 입력해주세요');return;}
+  if(!f.destination.trim()){alert('목적지를 입력해주세요');return;}
+  if(!f.purpose.trim()){alert('사용 목적을 입력해주세요');return;}
+  if(new Date(`${f.endDate}T${f.endTime}`)<=new Date(`${f.startDate}T${f.startTime}`)){alert('반납 일시가 출발 일시보다 늦어야 합니다');return;}
+  if(getConflicts(f.vehicleId,f.startDate,f.startTime,f.endDate,f.endTime,S.editingResId||'').length>0){
+    alert(`${getV(f.vehicleId)?.name}은 해당 기간에 이미 예약이 있습니다.\n다른 기간이나 차량을 선택해주세요.`);return;
+  }
+  if(S.editingResId){
+    // 수정 모드: 기존 예약 삭제 후 새로 저장
+    const updatedRes={id:S.editingResId,...f,status:'confirmed'};
+    fbSaveRes(updatedRes);
+    S.editingResId=null;
+    S.form={vehicleId:'',user:'',dept:'',startDate:todayStr(),startTime:'',endDate:todayStr(),endTime:'',destination:'',purpose:'',note:''};
+    S.successMsg='예약이 수정되었습니다! ✏️';
+  } else {
+    const newRes={id:'r'+Date.now(),...f,status:'confirmed'};
+    fbSaveRes(newRes);
+    S.form={vehicleId:'',user:'',dept:'',startDate:todayStr(),startTime:'',endDate:todayStr(),endTime:'',destination:'',purpose:'',note:''};
+    S.successMsg='예약이 확정되었습니다! 🎉';
+  }
+  render();window.scrollTo(0,0);
+}
+function editRes(id){
+  const r=S.reservations.find(r=>r.id===id);
+  if(!r)return;
+  S.editingResId=id;
+  S.form={vehicleId:r.vehicleId,user:r.user,dept:r.dept,startDate:r.startDate,startTime:r.startTime,endDate:r.endDate,endTime:r.endTime,destination:r.destination,purpose:r.purpose,note:r.note||''};
+  S.tlDate=r.startDate;
+  switchTab('reserve');
+  window.scrollTo(0,0);
+}
+function cancelEdit(){
+  S.editingResId=null;
+  S.form={vehicleId:'',user:'',dept:'',startDate:todayStr(),startTime:'',endDate:todayStr(),endTime:'',destination:'',purpose:'',note:''};
+  render();
+}
+function cancelRes(id){
+  if(!confirm('이 예약을 취소하시겠습니까?'))return;
+  fbDeleteRes(id);
+}
+
+document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+
+// 로컬 저장 데이터 불러오기
+try{
+  const lr=localStorage.getItem('pm_res');
+  const lm=localStorage.getItem('pm_maint');
+  if(lr) S.reservations=JSON.parse(lr).filter(v=>v&&v.id);
+  if(lm) S.maintenance=JSON.parse(lm).filter(v=>v&&v.id);
+}catch(e){}
+
+// 앱 즉시 표시
+render();
+
+// Firebase 백그라운드 연결 시도
+if(db){
+  try{
+    db.ref('reservations').on('value', snap=>{
+      try{ const d=snap.val()||{}; S.reservations=Object.values(d).filter(v=>v&&v.id); }catch(e){}
+      setSyncStatus('online'); render();
+    },()=>setSyncStatus('offline'));
+    db.ref('maintenance').on('value', snap=>{
+      try{ const d=snap.val()||{}; S.maintenance=Object.values(d).filter(v=>v&&v.id); }catch(e){}
+      render();
+    },()=>{});
+    db.ref('.info/connected').on('value', snap=>setSyncStatus(snap.val()?'online':'offline'));
+  }catch(e){ setSyncStatus('offline'); }
+}
+</script>
+
+
+</body></html>
