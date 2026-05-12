@@ -339,7 +339,9 @@ function fbSaveMaint(m){
 }
 
 /* ───── 유틸 ───── */
-function todayStr(){return new Date().toISOString().split('T')[0];}
+function todayStr(){
+  return new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Seoul'});
+}
 function getV(id){return VEHICLES.find(v=>v.id===id);}
 function korDate(d){return new Date(d+'T12:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});}
 function addDays(d,n){const dt=new Date(d+'T12:00:00');dt.setDate(dt.getDate()+n);return dt.toISOString().split('T')[0];}
@@ -544,7 +546,21 @@ function renderSchedule(){
           </div>
         </div>
       </div>`;}).join('')}
-    ${past.length>0?`<div class="divider"></div><div class="section-lbl">지난 예약</div>${past.slice().reverse().slice(0,5).map(r=>{const v=getV(r.vehicleId);return`<div class="res-item" style="opacity:0.5"><div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div><div class="res-meta">${r.user} (${r.dept}) · ${r.startDate} ${r.startTime}~${r.endTime}</div></div>`;}).join('')}`:''}`;
+    ${past.length>0?`<div class="divider"></div>
+    <div class="section-lbl">완료된 예약 (${past.length}건)</div>
+    ${past.slice().reverse().map(r=>{
+      const v=getV(r.vehicleId);
+      return`<div class="res-item" style="opacity:0.6;border-left:3px solid var(--text3)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div>
+            <div class="res-meta">${r.user} (${r.dept}) · ${r.startDate} ${r.startTime}~${r.endTime}</div>
+            ${r.purpose?`<div class="res-meta">📍 ${r.purpose}</div>`:''}
+          </div>
+          <span class="badge" style="background:#F0F0F0;color:#888;flex-shrink:0">완료</span>
+        </div>
+      </div>`;}).join('')}
+    `:''}`;
 }
 
 /* ───── 대시보드 ───── */
