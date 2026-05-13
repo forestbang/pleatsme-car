@@ -1205,8 +1205,9 @@ function renderDynamicFields(cat, r=null){
     html=timePickerHTML('f-start', r?.startAt, '조퇴 시간', true)+`
       <div class="form-group"><label class="form-label">사유 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
   } else if(cat==='direct_out'){
-    html=timePickerHTML('f-start', r?.startAt, '출발 시간', true)+`
-      <div class="form-group"><label class="form-label">목적지 장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
+    html=timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정 시간', false)+`
+      <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
+      <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else { // outing
     html=timePickerHTML('f-start', r?.startAt, '출발 시간', true)+
@@ -1276,11 +1277,12 @@ function submitForm(){
     if(!purpose){ showFormError('사유를 입력해주세요'); return; }
 
   } else if(cat === 'direct_out'){
-    startAt = readTimePicker('f-start');
-    if(!startAt){ showFormError('출발 시간을 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('목적을 입력해주세요'); return; }
+    expectedReturnAt = readTimePicker('f-return');
+    isDirectLeave = document.getElementById('f-direct')?.checked || false;
     place = (document.getElementById('f-place')?.value || '').trim();
+    startAt = Date.now(); // 직출은 오늘 기준
 
   } else {
     startAt = readTimePicker('f-start');
