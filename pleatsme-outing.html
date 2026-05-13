@@ -939,15 +939,15 @@ function openForm(editId=null){
   const r = editId ? S.records[editId] : null;
   const defCat = r?.category||'outing';
 
+  // 현재 사용자 BU 자동 연계
+  const userEmp = S.currentUser ? getEmp(S.currentUser) : null;
+  const defBuId = r?.buId || userEmp?.buId || '';
+  const defSelected = r ? (r.participantIds||[r.writerId]) : (S.currentUser ? [S.currentUser] : []);
+
   const catBtns=Object.entries(CATS).map(([k,v])=>
     `<button class="cat-btn${defCat===k?' selected-'+k:''}" data-cat="${k}" onclick="selectCat('${k}')">${v.icon} ${v.label}</button>`
   ).join('');
 
-  // BU 선택
-  let buOpts='<option value="">BU 선택</option>';
-  buSorted().forEach(b=>buOpts+=`<option value="${b.id}"${r?.buId===b.id?' selected':''}>${b.name}</option>`);
-
-  const formId='rec-form-modal';
   const overlayEl=document.getElementById('overlay');
   const contentEl=document.getElementById('overlay-content');
   contentEl.className='modal';
@@ -964,11 +964,11 @@ function openForm(editId=null){
       </div>
       <div class="form-group">
         <label class="form-label">소속 BU</label>
-        <select class="form-input" id="f-bu" onchange="fBuChange()"><option value="">BU 선택</option>${buSorted().map(b=>`<option value="${b.id}"${r?.buId===b.id?' selected':''}>${b.name}</option>`).join('')}</select>
+        <select class="form-input" id="f-bu" onchange="fBuChange()">${buSorted().map(b=>`<option value="${b.id}"${defBuId===b.id?' selected':''}>${b.name}</option>`).join('')}</select>
       </div>
       <div class="form-group">
         <label class="form-label">대상자 (복수 선택 가능)</label>
-        <div class="emp-list" id="f-emp-list"><div style="padding:12px;color:var(--text3);font-size:13px">BU를 먼저 선택하세요</div></div>
+        <div class="emp-list" id="f-emp-list"></div>
       </div>
       <div id="f-dynamic"></div>
       <div class="form-group" id="f-memo-group">
@@ -980,14 +980,8 @@ function openForm(editId=null){
 
   overlayEl.classList.add('show');
 
-  // 초기 BU 설정
-  if(r?.buId){
-    document.getElementById('f-bu').value=r.buId;
-    renderEmpList(r.buId, r.participantIds||[r.writerId]);
-  } else if(S.currentUser){
-    const ue=getEmp(S.currentUser);
-    if(ue.buId){ document.getElementById('f-bu').value=ue.buId; renderEmpList(ue.buId,[S.currentUser]); }
-  }
+  // BU와 대상자 자동 세팅
+  if(defBuId) renderEmpList(defBuId, defSelected);
 
   renderDynamicFields(defCat, r);
 }
@@ -1051,7 +1045,7 @@ function renderDynamicFields(cat, r=null){
       </div>
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 상암 사무소" value="${r?.place||''}"></div>
-      <div class="form-group"><label class="form-label">목적</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 물류센터" value="${r?.purpose||''}"></div>`;
+      <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 물류센터" value="${r?.purpose||''}"></div>`;
   }
   el.innerHTML=html;
 }
@@ -1101,6 +1095,7 @@ function submitForm(){
     const sd=document.getElementById('f-start-dt')?.value;
     const rd=document.getElementById('f-return-dt')?.value;
     if(!sd){ showToast('출발 시간을 입력해주세요'); return; }
+    if(!purpose.trim()){ showToast('목적을 입력해주세요'); return; }
     startAt=parseLocalDT(sd);
     if(rd) expectedReturnAt=parseLocalDT(rd);
     isDirectLeave=document.getElementById('f-direct')?.checked||false;
