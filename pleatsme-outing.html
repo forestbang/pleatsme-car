@@ -441,9 +441,11 @@ function parseLocalDT(str){ // "2024-01-15T09:30" → timestamp KST
   const [d,t]=str.split('T'); const [y,mo,da]=d.split('-'); const [h,m]=(t||'00:00').split(':');
   return new Date(y,mo-1,da,h,m).getTime();
 }
-function dtInputDefault(offset=0){ // datetime-local input 기본값
+function dtInputDefault(offset=0){
   const d = new Date(Date.now()+offset);
   const kst = new Date(d.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  const m10 = Math.ceil(kst.getMinutes()/10)*10;
+  if(m10===60){ kst.setHours(kst.getHours()+1); kst.setMinutes(0); } else { kst.setMinutes(m10); }
   return kst.getFullYear()+'-'+String(kst.getMonth()+1).padStart(2,'0')+'-'+String(kst.getDate()).padStart(2,'0')+'T'+String(kst.getHours()).padStart(2,'0')+':'+String(kst.getMinutes()).padStart(2,'0');
 }
 function dateInputDefault(){
@@ -1169,18 +1171,18 @@ function renderDynamicFields(cat, r=null){
       <div class="form-group"><label class="form-label">사유</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 병원, 개인 사유" value="${r?.purpose||''}"></div>`;
   } else if(cat==='early_leave'){
     html=`
-      <div class="form-group"><label class="form-label">조퇴 시간</label><input type="datetime-local" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+      <div class="form-group"><label class="form-label">조퇴 시간</label><input type="datetime-local" step="600" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
       <div class="form-group"><label class="form-label">사유 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
   } else if(cat==='direct_out'){
     html=`
-      <div class="form-group"><label class="form-label">출발 시간 <span style="color:#DC2626">*</span></label><input type="datetime-local" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+      <div class="form-group"><label class="form-label">출발 시간 <span style="color:#DC2626">*</span></label><input type="datetime-local" step="600" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
       <div class="form-group"><label class="form-label">목적지 장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else { // outing
     html=`
       <div class="form-row">
-        <div class="form-group"><label class="form-label">출발 시간</label><input type="datetime-local" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
-        <div class="form-group"><label class="form-label">귀사 예정</label><input type="datetime-local" class="form-input" id="f-return-dt" value="${r?.expectedReturnAt?dtInputOf(r.expectedReturnAt):''}"></div>
+        <div class="form-group"><label class="form-label">출발 시간</label><input type="datetime-local" step="600" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+        <div class="form-group"><label class="form-label">귀사 예정</label><input type="datetime-local" step="600" class="form-input" id="f-return-dt" value="${r?.expectedReturnAt?dtInputOf(r.expectedReturnAt):''}"></div>
       </div>
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 상암 사무소" value="${r?.place||''}"></div>
