@@ -481,7 +481,10 @@ function renderReserve(){
         <div class="dt-label">🚀 출발</div>
         <div class="dt-inner">
           <div class="fgroup"><label>날짜</label><input type="date" value="${f.startDate}" min="${todayStr()}" onchange="SF('startDate',this.value);S.tlDate=this.value;if(S.form.endDate<this.value)SF('endDate',this.value);render()"></div>
-          <div class="fgroup"><label>시간</label><input type="time" value="${f.startTime}" onchange="SF('startTime',this.value);render()"></div>
+          <div class="fgroup"><label>시간</label><select onchange="SF('startTime',this.value);render()" style="font-size:16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
+            <option value="">선택</option>
+            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;return`<option value="${t}" ${f.startTime===t?'selected':''}>${t}</option>`;}).join('')).join('')}
+          </select></div>
         </div>
       </div>
       <div class="dt-sep">↓</div>
@@ -489,7 +492,10 @@ function renderReserve(){
         <div class="dt-label">🏁 반납</div>
         <div class="dt-inner">
           <div class="fgroup"><label>날짜</label><input type="date" value="${f.endDate}" min="${f.startDate||todayStr()}" onchange="SF('endDate',this.value);render()"></div>
-          <div class="fgroup"><label>시간</label><input type="time" value="${f.endTime}" onchange="SF('endTime',this.value);render()"></div>
+          <div class="fgroup"><label>시간</label><select onchange="SF('endTime',this.value);render()" style="font-size:16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
+            <option value="">선택</option>
+            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;return`<option value="${t}" ${f.endTime===t?'selected':''}>${t}</option>`;}).join('')).join('')}
+          </select></div>
         </div>
       </div>
       ${dur?`<div class="duration-row"><span class="duration-badge">⏱ 총 사용 ${dur}${isMultiDay(f)?' · 다박':''}</span></div>`:''}
