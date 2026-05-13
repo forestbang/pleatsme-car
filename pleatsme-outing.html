@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>플리츠미 외출기록</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="외출기록">
+<meta name="theme-color" content="#1B3A6B">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root{
+  --navy:#1B3A6B;--navy2:#2A4F8F;--navy3:#3B6CB7;
+  --bg:#F2F5FA;--card:#FFFFFF;--border:#E2E8F0;
+  --text1:#1A202C;--text2:#4A5568;--text3:#A0AEC0;
+  --vacation:#3B82F6;--vacation-bg:#EFF6FF;--vacation-t:#1D4ED8;
+  --half:#F59E0B;--half-bg:#FFFBEB;--half-t:#92400E;
+  --outing:#6B7280;--outing-bg:#F3F4F6;--outing-t:#374151;
+  --early:#EC4899;--early-bg:#FDF2F8;--early-t:#831843;
+  --out-color:#D97706;--out-bg:#FFFBEB;
+  --done-color:#059669;--done-bg:#ECFDF5;
+  --direct-color:#7C3AED;--direct-bg:#EDE9FE;
+  --post-color:#DC2626;--post-bg:#FEF2F2;
+  --sched-color:#6B7280;--sched-bg:#F3F4F6;
+  --radius:12px;--radius-sm:8px;--shadow:0 2px 12px rgba(27,58,107,0.08);
+  --nav-h:64px;--header-h:56px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text1);max-width:480px;margin:0 auto;min-height:100vh;position:relative;overflow-x:hidden}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,select,textarea{font-family:inherit}
+/* ── OVERLAY ── */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:flex-end;justify-content:center}
+#overlay.show{display:flex}
+#overlay.center{align-items:center}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,16px)}
+.modal.center-modal{border-radius:20px;width:92%;max-height:80vh}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:4px;margin:12px auto 8px}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 8px}
+.modal-title{font-size:17px;font-weight:600;color:var(--text1)}
+.modal-close{font-size:22px;color:var(--text3);padding:4px;line-height:1}
+/* ── HEADER ── */
+#app-header{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:var(--header-h);background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:50;padding-top:env(safe-area-inset-top,0)}
+.header-title{color:#fff;font-size:16px;font-weight:600;letter-spacing:-0.3px}
+.header-user{display:flex;align-items:center;gap:6px;color:#fff;font-size:13px;opacity:.85;cursor:pointer;padding:6px 10px;border-radius:20px;background:rgba(255,255,255,0.12)}
+.header-date{color:rgba(255,255,255,0.7);font-size:12px;text-align:right}
+/* ── MAIN ── */
+#main-content{margin-top:var(--header-h);margin-bottom:var(--nav-h);padding:16px 16px 8px;min-height:calc(100vh - var(--header-h) - var(--nav-h))}
+/* ── BOTTOM NAV ── */
+#bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom,0)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text3);font-size:10px;font-weight:500;padding-top:4px;transition:color .2s}
+.nav-item.active{color:var(--navy)}
+.nav-item svg{width:22px;height:22px}
+/* ── CARDS ── */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
+.card-sm{background:var(--card);border-radius:var(--radius-sm);box-shadow:var(--shadow);padding:12px}
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.badge-vacation{background:var(--vacation-bg);color:var(--vacation-t)}
+.badge-half_day{background:var(--half-bg);color:var(--half-t)}
+.badge-outing{background:var(--outing-bg);color:var(--outing-t)}
+.badge-early_leave{background:var(--early-bg);color:var(--early-t)}
+.badge-out{background:var(--out-bg);color:var(--out-color)}
+.badge-done{background:var(--done-bg);color:var(--done-color)}
+.badge-direct{background:var(--direct-bg);color:var(--direct-color)}
+.badge-post{background:var(--post-bg);color:var(--post-color)}
+.badge-sched{background:var(--sched-bg);color:var(--sched-color)}
+/* ── SUMMARY GRID ── */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.summary-card{background:var(--card);border-radius:var(--radius-sm);padding:14px 12px;box-shadow:var(--shadow)}
+.summary-label{font-size:11px;color:var(--text2);margin-bottom:4px}
+.summary-num{font-size:28px;font-weight:700;line-height:1}
+.summary-num.blue{color:var(--vacation)}
+.summary-num.amber{color:var(--half)}
+.summary-num.pink{color:var(--early)}
+.summary-num.active{color:var(--done-color)}
+/* ── RECORD CARDS ── */
+.rec-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:10px;border-left:4px solid transparent;transition:opacity .3s}
+.rec-card.vacation{border-left-color:var(--vacation)}
+.rec-card.half_day{border-left-color:var(--half)}
+.rec-card.outing{border-left-color:var(--outing)}
+.rec-card.early_leave{border-left-color:var(--early)}
+.rec-card.past{opacity:.55}
+.rec-card.active-out{background:linear-gradient(135deg,#FFFBEB 0%,#FFF 60%);border-left-color:var(--out-color)}
+.rec-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.rec-badges{display:flex;gap:4px;flex-wrap:wrap}
+.rec-names{font-size:15px;font-weight:600;color:var(--text1)}
+.rec-meta{font-size:12px;color:var(--text2);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap}
+.rec-meta span{display:flex;align-items:center;gap:3px}
+.rec-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.rec-actions button{flex:1;padding:7px;border-radius:8px;font-size:12px;font-weight:600;transition:.15s}
+.btn-return{background:var(--done-bg);color:var(--done-color)}
+.btn-edit{background:var(--outing-bg);color:var(--text2)}
+.btn-delete{background:var(--post-bg);color:var(--post-color)}
+/* ── SECTION TITLE ── */
+.section-title{font-size:13px;font-weight:700;color:var(--text2);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.05em}
+/* ── FORM ── */
+.form-group{margin-bottom:16px}
+.form-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;display:block}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;font-size:15px;color:var(--text1);outline:none;transition:border-color .2s;background:#fff}
+.form-input:focus{border-color:var(--navy3)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.cat-btn{padding:14px 8px;border-radius:var(--radius-sm);border:2px solid var(--border);text-align:center;font-size:14px;font-weight:600;color:var(--text2);transition:.15s;background:#fff}
+.cat-btn.selected-vacation{border-color:var(--vacation);background:var(--vacation-bg);color:var(--vacation-t)}
+.cat-btn.selected-half_day{border-color:var(--half);background:var(--half-bg);color:var(--half-t)}
+.cat-btn.selected-outing{border-color:var(--outing);background:var(--outing-bg);color:var(--outing-t)}
+.cat-btn.selected-early_leave{border-color:var(--early);background:var(--early-bg);color:var(--early-t)}
+.emp-list{max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff}
+.emp-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
+.emp-item:last-child{border-bottom:none}
+.emp-item:hover{background:var(--bg)}
+.emp-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--navy)}
+.emp-pos{font-size:11px;color:var(--text3);background:var(--bg);padding:2px 6px;border-radius:4px}
+.check-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff;cursor:pointer}
+.check-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--navy)}
+.check-label{font-size:14px;font-weight:600;color:var(--text1)}
+.btn-primary{width:100%;padding:14px;background:var(--navy);color:#fff;border-radius:var(--radius-sm);font-size:15px;font-weight:700;transition:.15s}
+.btn-primary:active{background:var(--navy2)}
+.btn-secondary{width:100%;padding:13px;background:var(--bg);color:var(--text2);border-radius:var(--radius-sm);font-size:15px;font-weight:600;border:1.5px solid var(--border)}
+/* ── FILTERS ── */
+.filter-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--text2);background:#fff;transition:.15s}
+.filter-chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.search-box{position:relative;margin-bottom:10px}
+.search-box input{width:100%;border:1.5px solid var(--border);border-radius:24px;padding:10px 16px 10px 38px;font-size:14px;background:#fff;outline:none}
+.search-box::before{content:'🔍';position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:13px}
+/* ── CALENDAR ── */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-title{font-size:17px;font-weight:700}
+.cal-nav{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;background:#fff;font-size:18px;color:var(--text2)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:12px}
+.cal-dow{text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:6px 0}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;position:relative;transition:.15s}
+.cal-day:hover{background:var(--bg)}
+.cal-day.today{background:var(--navy);color:#fff}
+.cal-day.selected{background:var(--navy2);color:#fff}
+.cal-day.other-month{opacity:.35}
+.cal-day .day-num{font-size:13px;font-weight:600;line-height:1}
+.cal-dots{display:flex;gap:2px;margin-top:2px;justify-content:center;flex-wrap:wrap}
+.cal-dot{width:5px;height:5px;border-radius:50%}
+/* ── ADMIN ── */
+.admin-section{margin-bottom:20px}
+.admin-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.emp-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:#fff;margin-bottom:6px}
+.emp-info{display:flex;flex-direction:column;gap:2px}
+.emp-name-pos{font-size:14px;font-weight:600}
+.emp-bu-tag{font-size:11px;color:var(--text3);background:var(--bg);padding:2px 8px;border-radius:4px;display:inline-block}
+.btn-sm{padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600}
+.btn-warn{background:var(--post-bg);color:var(--post-color)}
+.btn-restore{background:var(--done-bg);color:var(--done-color)}
+.inactive-emp{opacity:.45}
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:8px}
+.empty-text{font-size:14px}
+/* ── SETUP SCREEN ── */
+#setup-screen{position:fixed;inset:0;background:var(--navy);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px}
+#setup-screen.hidden{display:none}
+.setup-logo{color:#fff;font-size:26px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
+.setup-sub{color:rgba(255,255,255,0.6);font-size:14px;margin-bottom:40px}
+.setup-card{background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:380px}
+.setup-card-title{font-size:18px;font-weight:700;margin-bottom:20px;text-align:center}
+.setup-select{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px 12px;font-size:15px;color:var(--text1);outline:none;margin-bottom:12px;background:#fff}
+.setup-btn{width:100%;padding:14px;background:var(--navy);color:#fff;border-radius:var(--radius-sm);font-size:16px;font-weight:700;margin-top:8px}
+/* ── TOAST ── */
+#toast{position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%) translateY(20px);background:#1A202C;color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:300;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.fab{position:fixed;bottom:calc(var(--nav-h) + 14px);right:20px;width:52px;height:52px;background:var(--navy);border-radius:50%;box-shadow:0 4px 16px rgba(27,58,107,0.35);display:flex;align-items:center;justify-content:center;z-index:40;transition:.15s}
+.fab:active{transform:scale(0.92)}
+.fab svg{width:24px;height:24px;color:#fff}
+</style>
+</head>
+<body>
+
+<!-- 사용자 선택 화면 -->
+<div id="setup-screen">
+  <div class="setup-logo">PLEATSME</div>
+  <div class="setup-sub">임직원 외출기록 시스템</div>
+  <div class="setup-card">
+    <div class="setup-card-title">👋 처음 시작하기</div>
+    <select id="setup-bu" class="setup-select" onchange="setupBuChange()">
+      <option value="">소속 BU를 선택하세요</option>
+    </select>
+    <select id="setup-emp" class="setup-select">
+      <option value="">이름을 선택하세요</option>
+    </select>
+    <button class="setup-btn" onclick="setupComplete()">시작하기</button>
+  </div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="app" style="display:none">
+  <header id="app-header">
+    <div>
+      <div class="header-title">외출기록 · 플리츠미</div>
+      <div class="header-date" id="header-date"></div>
+    </div>
+    <div class="header-user" onclick="showSetup()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span id="header-user-name">이름 선택</span>
+    </div>
+  </header>
+
+  <main id="main-content"></main>
+
+  <nav id="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('dashboard')" id="nav-dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      대시보드
+    </button>
+    <button class="nav-item" onclick="switchTab('list')" id="nav-list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      전체목록
+    </button>
+    <button class="nav-item" onclick="switchTab('calendar')" id="nav-calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      캘린더
+    </button>
+    <button class="nav-item" onclick="switchTab('admin')" id="nav-admin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      직원관리
+    </button>
+  </nav>
+
+  <!-- FAB 등록 버튼 -->
+  <button class="fab" onclick="openForm()" id="fab-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+</div>
+
+<!-- 모달 오버레이 -->
+<div id="overlay" onclick="closeOverlay(event)">
+  <div id="overlay-content"></div>
+</div>
+
+<!-- 토스트 -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// ⚙️  FIREBASE 설정 (기존 차량예약 앱과 같은 config 사용 가능)
+// ═══════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://pleatsme-car-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+// ═══════════════════════════════════════════════════
+
+const ADMIN_PIN = "1234"; // ← 관리자 PIN (변경 권장)
+
+// ── 카테고리 정의 ──────────────────────────────────
+const CATS = {
+  vacation:    { label:'휴가', icon:'🏖', color:'var(--vacation)', bg:'var(--vacation-bg)' },
+  half_day:    { label:'반차', icon:'🌓', color:'var(--half)',     bg:'var(--half-bg)'     },
+  outing:      { label:'외출', icon:'🚗', color:'var(--outing)',   bg:'var(--outing-bg)'   },
+  early_leave: { label:'조퇴', icon:'🏠', color:'var(--early)',    bg:'var(--early-bg)'    },
+};
+
+// ── BU 초기 데이터 ─────────────────────────────────
+const INIT_BUS = [
+  {id:'bu_exec',    name:'임원',         sortOrder:1},
+  {id:'bu_sales',   name:'영업BU',       sortOrder:2},
+  {id:'bu_home',    name:'홈쇼핑BU',     sortOrder:3},
+  {id:'bu_product', name:'상품전략운영BU',sortOrder:4},
+  {id:'bu_online',  name:'온라인BU',     sortOrder:5},
+  {id:'bu_design',  name:'디자인BU',     sortOrder:6},
+  {id:'bu_mgmt',    name:'경영지원BU',   sortOrder:7},
+];
+
+// ── 직원 초기 데이터 ───────────────────────────────
+const INIT_EMPLOYEES = [
+  // 임원
+  {id:'e01',name:'장수영',position:'부회장',buId:'bu_exec'},
+  {id:'e02',name:'이경춘',position:'부회장',buId:'bu_exec'},
+  {id:'e03',name:'안장현',position:'사장',  buId:'bu_exec'},
+  {id:'e04',name:'방희삼',position:'사장',  buId:'bu_exec'},
+  {id:'e05',name:'조정화',position:'이사',  buId:'bu_exec'},
+  {id:'e06',name:'정영아',position:'이사',  buId:'bu_exec'},
+  {id:'e07',name:'선우연',position:'이사',  buId:'bu_exec'},
+  // 영업BU
+  {id:'e08',name:'김지환',position:'부장',buId:'bu_sales'},
+  {id:'e09',name:'이기백',position:'차장',buId:'bu_sales'},
+  {id:'e10',name:'이민수',position:'과장',buId:'bu_sales'},
+  {id:'e11',name:'박철완',position:'대리',buId:'bu_sales'},
+  {id:'e12',name:'이민건',position:'선임',buId:'bu_sales'},
+  {id:'e13',name:'최승준',position:'차장',buId:'bu_sales'},
+  {id:'e14',name:'김수지',position:'과장',buId:'bu_sales'},
+  {id:'e15',name:'김예림',position:'사원',buId:'bu_sales'},
+  {id:'e16',name:'강주희',position:'과장',buId:'bu_sales'},
+  // 홈쇼핑BU
+  {id:'e17',name:'김세라',position:'과장',buId:'bu_home'},
+  {id:'e18',name:'허진승',position:'과장',buId:'bu_home'},
+  {id:'e19',name:'김지민',position:'대리',buId:'bu_home'},
+  {id:'e20',name:'김지은',position:'선임',buId:'bu_home'},
+  {id:'e21',name:'이민경',position:'선임',buId:'bu_home'},
+  {id:'e22',name:'한인규',position:'전임',buId:'bu_home'},
+  // 상품전략운영BU
+  {id:'e23',name:'김준석',position:'과장',buId:'bu_product'},
+  {id:'e24',name:'김현우',position:'대리',buId:'bu_product'},
+  {id:'e25',name:'김소미',position:'사원',buId:'bu_product'},
+  {id:'e26',name:'장선하',position:'과장',buId:'bu_product'},
+  // 온라인BU
+  {id:'e27',name:'이창익',position:'차장',buId:'bu_online'},
+  {id:'e28',name:'박세진',position:'차장',buId:'bu_online'},
+  {id:'e29',name:'김고은',position:'차장',buId:'bu_online'},
+  {id:'e30',name:'석현욱',position:'차장',buId:'bu_online'},
+  {id:'e31',name:'최주희',position:'대리',buId:'bu_online'},
+  {id:'e32',name:'윤지혜',position:'선임',buId:'bu_online'},
+  {id:'e33',name:'박은희',position:'선임',buId:'bu_online'},
+  {id:'e34',name:'김수빈',position:'선임',buId:'bu_online'},
+  {id:'e35',name:'박재현',position:'전임',buId:'bu_online'},
+  // 디자인BU
+  {id:'e36',name:'지성구',position:'부장',buId:'bu_design'},
+  {id:'e37',name:'박은영',position:'부장',buId:'bu_design'},
+  {id:'e38',name:'김은정',position:'과장',buId:'bu_design'},
+  {id:'e39',name:'이하비',position:'대리',buId:'bu_design'},
+  {id:'e40',name:'유희지',position:'대리',buId:'bu_design'},
+  {id:'e41',name:'우승',  position:'선임',buId:'bu_design'},
+  {id:'e42',name:'김효은',position:'사원',buId:'bu_design'},
+  {id:'e43',name:'이주연',position:'전임',buId:'bu_design'},
+  // 경영지원BU
+  {id:'e44',name:'이미옥',position:'차장',buId:'bu_mgmt'},
+  {id:'e45',name:'서은정',position:'차장',buId:'bu_mgmt'},
+  {id:'e46',name:'김미숙',position:'대리',buId:'bu_mgmt'},
+];
+
+// ── 앱 상태 ────────────────────────────────────────
+let S = {
+  tab:'dashboard', currentUser:null, isAdmin:false,
+  records:{}, employees:{}, bus:{},
+  calYear:new Date().getFullYear(), calMonth:new Date().getMonth(),
+  filterPeriod:'today', filterBu:'all', filterCat:'all', filterSearch:'',
+  editingId:null, db:null, fbOk:false
+};
+
+// ═══════════════════════════════════════════
+// FIREBASE 초기화
+// ═══════════════════════════════════════════
+function initFirebase(){
+  try{
+    if(FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') throw new Error('config');
+    firebase.initializeApp(FIREBASE_CONFIG);
+    S.db = firebase.database();
+    S.fbOk = true;
+    const ref = S.db.ref('outing');
+    ref.child('bus').once('value', snap=>{
+      if(!snap.val()) initDefaultData();
+      else loadFromFirebase();
+    });
+  } catch(e){
+    console.warn('Firebase 미설정, 로컬 데이터 사용');
+    loadLocalData();
+    renderApp();
+  }
+}
+
+function initDefaultData(){
+  const bus={}, emp={};
+  INIT_BUS.forEach(b=>{ bus[b.id]={...b, active:true}; });
+  INIT_EMPLOYEES.forEach(e=>{ emp[e.id]={...e, active:true, createdAt:Date.now()}; });
+  S.db.ref('outing/bus').set(bus);
+  S.db.ref('outing/employees').set(emp);
+  S.bus = bus; S.employees = emp; S.records = {};
+  saveLocal(); renderApp();
+  subscribeFirebase();
+}
+
+function loadFromFirebase(){
+  S.db.ref('outing').on('value', snap=>{
+    const d = snap.val()||{};
+    S.bus = d.bus||{}; S.employees = d.employees||{}; S.records = d.records||{};
+    saveLocal(); renderApp();
+  });
+}
+
+function subscribeFirebase(){
+  if(!S.fbOk) return;
+  S.db.ref('outing').on('value', snap=>{
+    const d = snap.val()||{};
+    S.bus = d.bus||{}; S.employees = d.employees||{}; S.records = d.records||{};
+    saveLocal(); renderApp();
+  });
+}
+
+// ── 로컬 스토리지 ────────────────────────────────
+function saveLocal(){
+  localStorage.setItem('pm_bus', JSON.stringify(S.bus));
+  localStorage.setItem('pm_emp', JSON.stringify(S.employees));
+  localStorage.setItem('pm_rec', JSON.stringify(S.records));
+}
+function loadLocalData(){
+  try{
+    S.bus = JSON.parse(localStorage.getItem('pm_bus')||'null');
+    S.employees = JSON.parse(localStorage.getItem('pm_emp')||'null');
+    S.records = JSON.parse(localStorage.getItem('pm_rec')||'{}');
+    if(!S.bus){
+      S.bus={}; INIT_BUS.forEach(b=>S.bus[b.id]={...b,active:true});
+      S.employees={}; INIT_EMPLOYEES.forEach(e=>S.employees[e.id]={...e,active:true,createdAt:Date.now()});
+      saveLocal();
+    }
+  } catch(e){ S.bus={}; S.employees={}; S.records={}; }
+}
+
+// ═══════════════════════════════════════════
+// KST 시간 헬퍼
+// ═══════════════════════════════════════════
+function kstNow(){ return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'})); }
+function kstOf(ts){ return new Date(new Date(ts).toLocaleString('en-US',{timeZone:'Asia/Seoul'})); }
+function todayKST(){
+  const d=kstNow(); d.setHours(0,0,0,0); return d;
+}
+function fmtDate(ts){
+  return kstOf(ts).toLocaleDateString('ko-KR',{month:'short',day:'numeric',timeZone:'Asia/Seoul'});
+}
+function fmtTime(ts){
+  return kstOf(ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Seoul'});
+}
+function fmtDatetime(ts){
+  return kstOf(ts).toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Seoul'});
+}
+function parseLocalDT(str){ // "2024-01-15T09:30" → timestamp KST
+  if(!str) return null;
+  const [d,t]=str.split('T'); const [y,mo,da]=d.split('-'); const [h,m]=(t||'00:00').split(':');
+  return new Date(y,mo-1,da,h,m).getTime();
+}
+function dtInputDefault(offset=0){ // datetime-local input 기본값
+  const d = new Date(Date.now()+offset);
+  const kst = new Date(d.toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  return kst.getFullYear()+'-'+String(kst.getMonth()+1).padStart(2,'0')+'-'+String(kst.getDate()).padStart(2,'0')+'T'+String(kst.getHours()).padStart(2,'0')+':'+String(kst.getMinutes()).padStart(2,'0');
+}
+function dateInputDefault(){
+  const kst=kstNow();
+  return kst.getFullYear()+'-'+String(kst.getMonth()+1).padStart(2,'0')+'-'+String(kst.getDate()).padStart(2,'0');
+}
+
+// ═══════════════════════════════════════════
+// 상태 계산
+// ═══════════════════════════════════════════
+function calcStatus(r){
+  const now = kstNow().getTime();
+  if(r.category==='vacation'){
+    return r.endAt && kstOf(r.endAt).setHours(23,59,59,999) < now ? 'done' : 'vacation';
+  }
+  if(r.category==='half_day'){
+    return r.startAt && r.startAt < now ? 'done' : 'half_day';
+  }
+  if(r.category==='early_leave'){
+    return r.startAt && r.startAt < now ? 'early_done' : 'early_sched';
+  }
+  // 외출
+  if(r.actualReturnAt) return 'returned';
+  if(r.isDirectLeave) return r.startAt < now ? 'direct' : 'sched';
+  if(!r.startAt) return 'sched';
+  if(r.startAt > now) return 'sched';
+  if(r.expectedReturnAt && r.expectedReturnAt < now) return 'returned';
+  return 'out';
+}
+function getStatusLabel(status){
+  const m={
+    sched:'예정', out:'외출중', returned:'완료', direct:'직퇴',
+    vacation:'휴가중', half_day:'반차', done:'완료',
+    early_done:'조퇴', early_sched:'조퇴예정'
+  };
+  return m[status]||status;
+}
+function getStatusClass(status){
+  const m={
+    sched:'sched', out:'out', returned:'done', direct:'direct',
+    vacation:'vacation', half_day:'half_day', done:'done',
+    early_done:'early_leave', early_sched:'sched'
+  };
+  return 'badge badge-'+(m[status]||'sched');
+}
+function isPast(r){
+  const s=calcStatus(r);
+  return ['returned','done'].includes(s);
+}
+function isActiveOut(r){
+  return calcStatus(r)==='out';
+}
+
+// ── 직원/BU 조회 ──────────────────────────────────
+function getEmp(id){ return S.employees[id]||{name:'(알수없음)',position:'',buId:''}; }
+function getBU(id){ return S.bus[id]||{name:'(알수없음)'}; }
+function activeEmps(){ return Object.values(S.employees).filter(e=>e.active); }
+function buSorted(){ return Object.values(S.bus).filter(b=>b.active).sort((a,b)=>a.sortOrder-b.sortOrder); }
+function empsByBu(buId){ return activeEmps().filter(e=>e.buId===buId); }
+
+// 직급 순서 (낮을수록 높은 직급)
+const POS_RANK = {'부회장':0,'사장':1,'이사':2,'부장':3,'차장':4,'과장':5,'대리':6,'선임':7,'전임':8,'사원':9};
+function sortEmps(emps){
+  return [...emps].sort((a,b)=>{
+    const ra = POS_RANK[a.position]??99;
+    const rb = POS_RANK[b.position]??99;
+    if(ra!==rb) return ra-rb;
+    // 임원은 원래 등록 순서(ID 순) 유지, 그 외 BU는 가나다순
+    if(a.buId==='bu_exec') return a.id.localeCompare(b.id);
+    return a.name.localeCompare(b.name,'ko');
+  });
+}
+function getParticipantNames(ids){
+  if(!ids||!ids.length) return '';
+  return ids.map(id=>getEmp(id).name).join(', ');
+}
+
+// ═══════════════════════════════════════════
+// DB 쓰기
+// ═══════════════════════════════════════════
+function saveRecord(rec){
+  if(S.fbOk){ S.db.ref('outing/records/'+rec.id).set(rec); }
+  else{ S.records[rec.id]=rec; saveLocal(); renderApp(); }
+}
+function deleteRecord(id){
+  if(S.fbOk){ S.db.ref('outing/records/'+id).remove(); }
+  else{ delete S.records[id]; saveLocal(); renderApp(); }
+}
+function saveEmployee(emp){
+  if(S.fbOk){ S.db.ref('outing/employees/'+emp.id).set(emp); }
+  else{ S.employees[emp.id]=emp; saveLocal(); renderApp(); }
+}
+function saveBU(bu){
+  if(S.fbOk){ S.db.ref('outing/bus/'+bu.id).set(bu); }
+  else{ S.bus[bu.id]=bu; saveLocal(); renderApp(); }
+}
+
+// ═══════════════════════════════════════════
+// SETUP (사용자 선택)
+// ═══════════════════════════════════════════
+function setupBuChange(){
+  const buId=document.getElementById('setup-bu').value;
+  const sel=document.getElementById('setup-emp');
+  sel.innerHTML='<option value="">이름을 선택하세요</option>';
+  if(!buId) return;
+  sortEmps(empsByBu(buId))
+    .forEach(e=>sel.innerHTML+=`<option value="${e.id}">${e.position} ${e.name}</option>`);
+}
+function populateSetup(){
+  const bu=document.getElementById('setup-bu');
+  bu.innerHTML='<option value="">소속 BU를 선택하세요</option>';
+  buSorted().forEach(b=>bu.innerHTML+=`<option value="${b.id}">${b.name}</option>`);
+}
+function setupComplete(){
+  const empId=document.getElementById('setup-emp').value;
+  if(!empId){ showToast('이름을 선택해주세요'); return; }
+  S.currentUser = empId;
+  localStorage.setItem('pm_user', empId);
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('app').style.display='';
+  updateHeaderUser(); renderApp();
+}
+function showSetup(){
+  populateSetup();
+  document.getElementById('setup-screen').classList.remove('hidden');
+  const saved = S.currentUser;
+  if(saved){
+    const emp=getEmp(saved);
+    const buSel=document.getElementById('setup-bu');
+    buSel.value=emp.buId; setupBuChange();
+    document.getElementById('setup-emp').value=saved;
+  }
+}
+function updateHeaderUser(){
+  const u=getEmp(S.currentUser||'');
+  document.getElementById('header-user-name').textContent = u.name||'이름 선택';
+}
+function updateHeaderDate(){
+  const d=kstNow();
+  document.getElementById('header-date').textContent=d.toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+}
+
+// ═══════════════════════════════════════════
+// TAB 전환
+// ═══════════════════════════════════════════
+function switchTab(tab){
+  S.tab=tab;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+tab)?.classList.add('active');
+  document.getElementById('fab-btn').style.display = tab==='admin' ? 'none' : '';
+  renderApp();
+}
+function renderApp(){
+  updateHeaderDate(); updateHeaderUser();
+  if(S.tab==='dashboard') renderDashboard();
+  else if(S.tab==='list') renderList();
+  else if(S.tab==='calendar') renderCalendar();
+  else if(S.tab==='admin') renderAdmin();
+}
+
+// ═══════════════════════════════════════════
+// 대시보드
+// ═══════════════════════════════════════════
+function renderDashboard(){
+  const today=todayKST();
+  const tomorrow=new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  const recs=Object.values(S.records);
+  const todayRecs=recs.filter(r=>{
+    const s=kstOf(r.startAt); s.setHours(0,0,0,0);
+    return s.getTime()===today.getTime();
+  });
+  const outNow=recs.filter(r=>isActiveOut(r));
+  const vacToday=todayRecs.filter(r=>r.category==='vacation');
+  const halfToday=todayRecs.filter(r=>r.category==='half_day');
+  const earlyToday=todayRecs.filter(r=>r.category==='early_leave');
+  const outingToday=todayRecs.filter(r=>r.category==='outing');
+  const countOut=outNow.length;
+  const countV=vacToday.length;
+  const countH=halfToday.length;
+  const countE=earlyToday.length;
+
+  let html=`
+  <div class="summary-grid">
+    <div class="summary-card"><div class="summary-label">🚗 현재 외출중</div><div class="summary-num active">${countOut}명</div></div>
+    <div class="summary-card"><div class="summary-label">🏖 오늘 휴가</div><div class="summary-num blue">${countV}명</div></div>
+    <div class="summary-card"><div class="summary-label">🌓 오늘 반차</div><div class="summary-num amber">${countH}명</div></div>
+    <div class="summary-card"><div class="summary-label">🏠 오늘 조퇴</div><div class="summary-num pink">${countE}명</div></div>
+  </div>`;
+
+  if(countOut>0){
+    html+=`<div class="section-title">🟠 지금 외출 중</div>`;
+    outNow.forEach(r=>{ html+=buildRecCard(r, true); });
+  }
+
+  const upcoming=todayRecs.filter(r=>calcStatus(r)==='sched');
+  if(upcoming.length>0){
+    html+=`<div class="section-title">📅 오늘 예정</div>`;
+    upcoming.forEach(r=>html+=buildRecCard(r));
+  }
+
+  if(vacToday.length||halfToday.length||earlyToday.length){
+    html+=`<div class="section-title">📋 오늘 자리비움</div>`;
+    [...vacToday,...halfToday,...earlyToday].forEach(r=>html+=buildRecCard(r));
+  }
+
+  const pastToday=todayRecs.filter(r=>isPast(r));
+  if(pastToday.length>0){
+    html+=`<div class="section-title">✅ 오늘 완료</div>`;
+    pastToday.forEach(r=>html+=buildRecCard(r,false,true));
+  }
+
+  if(todayRecs.length===0){
+    html+=`<div class="empty"><div class="empty-icon">😊</div><div class="empty-text">오늘은 외출/휴가 기록이 없어요</div></div>`;
+  }
+
+  document.getElementById('main-content').innerHTML=html;
+  attachRecActions();
+}
+
+// ═══════════════════════════════════════════
+// 기록 카드 빌더
+// ═══════════════════════════════════════════
+function buildRecCard(r, isActive=false, isPastCard=false){
+  const status=calcStatus(r);
+  const cat=CATS[r.category]||{label:r.category};
+  const names=getParticipantNames(r.participantIds)||getEmp(r.writerId).name;
+  const writer=getEmp(r.writerId);
+  const bu=getBU(r.buId);
+  const isMe=r.writerId===S.currentUser || (r.participantIds||[]).includes(S.currentUser);
+  const canEdit=S.isAdmin||(r.writerId===S.currentUser);
+
+  let timeHtml='';
+  if(r.category==='outing'){
+    timeHtml=`<span>🕐 ${fmtTime(r.startAt)}`;
+    if(r.expectedReturnAt) timeHtml+=` → ${fmtTime(r.expectedReturnAt)}`;
+    timeHtml+='</span>';
+  } else if(r.category==='early_leave'){
+    timeHtml=`<span>🕐 ${fmtTime(r.startAt)} 조퇴</span>`;
+  } else if(r.category==='half_day'){
+    timeHtml=`<span>📅 ${fmtDate(r.startAt)}</span>`;
+    if(r.halfPeriod) timeHtml+=`<span>${r.halfPeriod==='am'?'오전반차':'오후반차'}</span>`;
+  } else if(r.category==='vacation'){
+    timeHtml=`<span>📅 ${fmtDate(r.startAt)}`;
+    if(r.endAt && r.endAt!==r.startAt) timeHtml+=' ~ '+fmtDate(r.endAt);
+    timeHtml+='</span>';
+  }
+  if(r.place) timeHtml+=`<span>📍 ${r.place}</span>`;
+  if(r.purpose) timeHtml+=`<span>📝 ${r.purpose}</span>`;
+
+  let badges=`<span class="badge badge-${r.category}">${cat.label}</span>`;
+  badges+=`<span class="${getStatusClass(status)}">${getStatusLabel(status)}</span>`;
+  if(r.isDirectLeave) badges+=`<span class="badge badge-direct">직퇴</span>`;
+  if(r.isPostEntry) badges+=`<span class="badge badge-post">사후기재</span>`;
+
+  let actions='';
+  if(canEdit||S.isAdmin){
+    actions+=`<div class="rec-actions">`;
+    if(status==='out') actions+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
+    actions+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="edit">✏️ 수정</button>`;
+    if(S.isAdmin) actions+=`<button class="rec-actions-btn btn-delete" data-id="${r.id}" data-action="delete">🗑 삭제</button>`;
+    actions+=`</div>`;
+  }
+
+  const cardClass=`rec-card ${r.category}${isActive?' active-out':''}${isPastCard?' past':''}`;
+  return `<div class="${cardClass}" data-id="${r.id}">
+    <div class="rec-top"><div class="rec-badges">${badges}</div><span style="font-size:11px;color:var(--text3)">${bu.name}</span></div>
+    <div class="rec-names">${names}</div>
+    <div class="rec-meta">${timeHtml}</div>
+    ${actions}
+  </div>`;
+}
+
+function attachRecActions(){
+  document.querySelectorAll('.rec-actions-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const id=btn.dataset.id, action=btn.dataset.action;
+      if(action==='return') handleReturn(id);
+      else if(action==='edit') openForm(id);
+      else if(action==='delete') handleDelete(id);
+    });
+  });
+}
+function handleReturn(id){
+  const r=S.records[id]; if(!r) return;
+  r.actualReturnAt=Date.now(); r.updatedAt=Date.now();
+  saveRecord(r); showToast('귀사 처리되었습니다');
+}
+function handleDelete(id){
+  if(!confirm('이 기록을 삭제할까요?')) return;
+  deleteRecord(id); showToast('삭제되었습니다');
+}
+
+// ═══════════════════════════════════════════
+// 전체 목록
+// ═══════════════════════════════════════════
+function renderList(){
+  const periods=['today','week','month','all'];
+  const pLabels={today:'오늘',week:'이번 주',month:'이번 달',all:'전체'};
+  let chips='';
+  periods.forEach(p=>chips+=`<button class="filter-chip${S.filterPeriod===p?' active':''}" onclick="setFilter('period','${p}')">${pLabels[p]}</button>`);
+
+  let buChips=`<button class="filter-chip${S.filterBu==='all'?' active':''}" onclick="setFilter('bu','all')">전체 BU</button>`;
+  buSorted().forEach(b=>buChips+=`<button class="filter-chip${S.filterBu===b.id?' active':''}" onclick="setFilter('bu','${b.id}')">${b.name}</button>`);
+
+  let catChips=`<button class="filter-chip${S.filterCat==='all'?' active':''}" onclick="setFilter('cat','all')">전체</button>`;
+  Object.entries(CATS).forEach(([k,v])=>catChips+=`<button class="filter-chip${S.filterCat===k?' active':''}" onclick="setFilter('cat','${k}')">${v.label}</button>`);
+
+  const filtered=getFilteredRecords();
+  let recHtml='';
+  if(filtered.length===0) recHtml=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">해당하는 기록이 없습니다</div></div>`;
+  else filtered.forEach(r=>recHtml+=buildRecCard(r));
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="filter-row" style="margin-bottom:8px">${chips}</div>
+    <div class="filter-row" style="margin-bottom:8px">${buChips}</div>
+    <div class="filter-row" style="margin-bottom:10px">${catChips}</div>
+    <div class="search-box">
+      <input type="text" placeholder="직원 이름 검색" value="${S.filterSearch}" oninput="setFilter('search',this.value)">
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:8px">총 ${filtered.length}건</div>
+    ${recHtml}`;
+  attachRecActions();
+}
+
+function getFilteredRecords(){
+  const now=kstNow(); const today=todayKST();
+  let recs=Object.values(S.records);
+  // 기간 필터
+  if(S.filterPeriod==='today'){
+    recs=recs.filter(r=>{ const d=kstOf(r.startAt); d.setHours(0,0,0,0); return d.getTime()===today.getTime(); });
+  } else if(S.filterPeriod==='week'){
+    const w=new Date(today); w.setDate(w.getDate()-w.getDay());
+    recs=recs.filter(r=>new Date(r.startAt)>=w);
+  } else if(S.filterPeriod==='month'){
+    const m=new Date(today.getFullYear(),today.getMonth(),1);
+    recs=recs.filter(r=>new Date(r.startAt)>=m);
+  }
+  if(S.filterBu!=='all') recs=recs.filter(r=>r.buId===S.filterBu);
+  if(S.filterCat!=='all') recs=recs.filter(r=>r.category===S.filterCat);
+  if(S.filterSearch){
+    const q=S.filterSearch;
+    recs=recs.filter(r=>{
+      const names=[r.writerId,...(r.participantIds||[])].map(id=>getEmp(id).name);
+      return names.some(n=>n.includes(q));
+    });
+  }
+  return recs.sort((a,b)=>b.startAt-a.startAt);
+}
+function setFilter(type,val){
+  if(type==='period') S.filterPeriod=val;
+  else if(type==='bu') S.filterBu=val;
+  else if(type==='cat') S.filterCat=val;
+  else if(type==='search') S.filterSearch=val;
+  renderList();
+}
+
+// ═══════════════════════════════════════════
+// 캘린더
+// ═══════════════════════════════════════════
+function renderCalendar(){
+  const y=S.calYear, m=S.calMonth;
+  const monthName=new Date(y,m,1).toLocaleDateString('ko-KR',{year:'numeric',month:'long'});
+  const firstDay=new Date(y,m,1).getDay();
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const today=kstNow();
+  const dows=['일','월','화','수','목','금','토'];
+
+  // 날짜별 기록 집계
+  const byDate={};
+  Object.values(S.records).forEach(r=>{
+    const d=kstOf(r.startAt);
+    if(d.getFullYear()===y && d.getMonth()===m){
+      const k=d.getDate();
+      if(!byDate[k]) byDate[k]=[];
+      byDate[k].push(r);
+    }
+  });
+
+  let dowHtml=dows.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  let dayHtml='';
+  for(let i=0;i<firstDay;i++) dayHtml+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    const recs=byDate[d]||[];
+    let dots='';
+    const cats=[...new Set(recs.map(r=>r.category))];
+    cats.slice(0,4).forEach(c=>{
+      const col=c==='vacation'?'var(--vacation)':c==='half_day'?'var(--half)':c==='outing'?'var(--outing)':'var(--early)';
+      dots+=`<span class="cal-dot" style="background:${col}"></span>`;
+    });
+    dayHtml+=`<div class="cal-day${isToday?' today':''}" onclick="calDayClick(${d})"><span class="day-num">${d}</span><div class="cal-dots">${dots}</div></div>`;
+  }
+
+  const selDay=S.calSelDay;
+  let dayDetail='';
+  if(selDay){
+    const dayRecs=byDate[selDay]||[];
+    dayDetail=`<div class="section-title">${m+1}월 ${selDay}일 기록 (${dayRecs.length}건)</div>`;
+    if(dayRecs.length===0) dayDetail+=`<div class="empty" style="padding:20px"><div class="empty-text">기록 없음</div></div>`;
+    else dayRecs.forEach(r=>dayDetail+=buildRecCard(r));
+  }
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="card">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calMove(-1)">‹</button>
+        <span class="cal-title">${monthName}</span>
+        <button class="cal-nav" onclick="calMove(1)">›</button>
+      </div>
+      <div class="cal-grid">${dowHtml}${dayHtml}</div>
+    </div>
+    ${dayDetail}`;
+  attachRecActions();
+}
+function calMove(d){
+  S.calMonth+=d;
+  if(S.calMonth<0){S.calMonth=11;S.calYear--;}
+  if(S.calMonth>11){S.calMonth=0;S.calYear++;}
+  S.calSelDay=null; renderCalendar();
+}
+function calDayClick(d){ S.calSelDay=d; renderCalendar(); }
+
+// ═══════════════════════════════════════════
+// 직원/관리 화면
+// ═══════════════════════════════════════════
+function renderAdmin(){
+  if(!S.isAdmin){
+    document.getElementById('main-content').innerHTML=`
+      <div class="card">
+        <div style="text-align:center;padding:20px 0">
+          <div style="font-size:36px;margin-bottom:12px">🔒</div>
+          <div style="font-size:16px;font-weight:700;margin-bottom:8px">관리자 전용</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:20px">PIN 번호를 입력하면 직원 관리, 전체 기록 수정 등을 할 수 있습니다.</div>
+          <input id="pin-input" type="password" class="form-input" placeholder="PIN 번호 입력" maxlength="8" style="max-width:200px;text-align:center;letter-spacing:4px;margin-bottom:12px" onkeydown="if(event.key==='Enter')checkPin()">
+          <button onclick="checkPin()" class="btn-primary" style="max-width:200px">관리자 모드 진입</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // 관리자 화면
+  const emps=Object.values(S.employees).sort((a,b)=>{
+    const ba=getBU(a.buId).sortOrder||99, bb=getBU(b.buId).sortOrder||99;
+    if(ba!==bb) return ba-bb;
+    const ra=POS_RANK[a.position]??99, rb=POS_RANK[b.position]??99;
+    if(ra!==rb) return ra-rb;
+    if(a.buId==='bu_exec') return a.id.localeCompare(b.id);
+    return a.name.localeCompare(b.name,'ko');
+  });
+  let empRows=emps.map(e=>{
+    const bu=getBU(e.buId);
+    return `<div class="emp-row${e.active?'':' inactive-emp'}">
+      <div class="emp-info">
+        <span class="emp-name-pos">${e.position} ${e.name}</span>
+        <span class="emp-bu-tag">${bu.name}</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sm btn-edit" onclick="openEmpEdit('${e.id}')">수정</button>
+        ${e.active
+          ?`<button class="btn-sm btn-warn" onclick="toggleEmp('${e.id}',false)">비활성</button>`
+          :`<button class="btn-sm btn-restore" onclick="toggleEmp('${e.id}',true)">복원</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="admin-section">
+      <div class="admin-title">👥 직원 관리</div>
+      <button class="btn-secondary" style="margin-bottom:12px" onclick="openEmpAdd()">+ 직원 추가</button>
+      ${empRows}
+    </div>
+    <div class="admin-section">
+      <div class="admin-title">🏢 BU 관리</div>
+      ${buSorted().map(b=>`<div class="emp-row">
+        <span style="font-size:14px;font-weight:600">${b.name}</span>
+        <button class="btn-sm btn-edit" onclick="openBuEdit('${b.id}')">수정</button>
+      </div>`).join('')}
+      <button class="btn-secondary" style="margin-top:8px" onclick="openBuAdd()">+ BU 추가</button>
+    </div>
+    <div class="admin-section">
+      <button class="btn-secondary" style="color:var(--post-color);border-color:var(--post-color)" onclick="adminLogout()">🔓 관리자 모드 종료</button>
+    </div>`;
+}
+function checkPin(){
+  const v=document.getElementById('pin-input')?.value;
+  if(v===ADMIN_PIN){ S.isAdmin=true; showToast('관리자 모드입니다'); renderAdmin(); }
+  else showToast('PIN 번호가 틀렸습니다');
+}
+function adminLogout(){ S.isAdmin=false; renderAdmin(); }
+function toggleEmp(id,active){
+  const e=S.employees[id]; if(!e) return;
+  e.active=active; saveEmployee(e); showToast(active?'복원되었습니다':'비활성화되었습니다');
+}
+
+// ═══════════════════════════════════════════
+// 기록 등록/수정 폼
+// ═══════════════════════════════════════════
+function openForm(editId=null){
+  S.editingId = editId;
+  const r = editId ? S.records[editId] : null;
+  const defCat = r?.category||'outing';
+
+  const catBtns=Object.entries(CATS).map(([k,v])=>
+    `<button class="cat-btn${defCat===k?' selected-'+k:''}" data-cat="${k}" onclick="selectCat('${k}')">${v.icon} ${v.label}</button>`
+  ).join('');
+
+  // BU 선택
+  let buOpts='<option value="">BU 선택</option>';
+  buSorted().forEach(b=>buOpts+=`<option value="${b.id}"${r?.buId===b.id?' selected':''}>${b.name}</option>`);
+
+  const formId='rec-form-modal';
+  const overlayEl=document.getElementById('overlay');
+  const contentEl=document.getElementById('overlay-content');
+  contentEl.className='modal';
+  contentEl.innerHTML=`
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span class="modal-title">${r?'기록 수정':'기록 등록'}</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div style="padding:0 20px 24px">
+      <div class="form-group">
+        <label class="form-label">대분류</label>
+        <div class="cat-grid" id="cat-grid">${catBtns}</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">소속 BU</label>
+        <select class="form-input" id="f-bu" onchange="fBuChange()"><option value="">BU 선택</option>${buSorted().map(b=>`<option value="${b.id}"${r?.buId===b.id?' selected':''}>${b.name}</option>`).join('')}</select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">대상자 (복수 선택 가능)</label>
+        <div class="emp-list" id="f-emp-list"><div style="padding:12px;color:var(--text3);font-size:13px">BU를 먼저 선택하세요</div></div>
+      </div>
+      <div id="f-dynamic"></div>
+      <div class="form-group" id="f-memo-group">
+        <label class="form-label">메모</label>
+        <textarea class="form-input" id="f-memo" rows="2" placeholder="선택 입력">${r?.memo||''}</textarea>
+      </div>
+      <button class="btn-primary" onclick="submitForm()">💾 저장</button>
+    </div>`;
+
+  overlayEl.classList.add('show');
+
+  // 초기 BU 설정
+  if(r?.buId){
+    document.getElementById('f-bu').value=r.buId;
+    renderEmpList(r.buId, r.participantIds||[r.writerId]);
+  } else if(S.currentUser){
+    const ue=getEmp(S.currentUser);
+    if(ue.buId){ document.getElementById('f-bu').value=ue.buId; renderEmpList(ue.buId,[S.currentUser]); }
+  }
+
+  renderDynamicFields(defCat, r);
+}
+
+function renderEmpList(buId, selected=[]){
+  const el=document.getElementById('f-emp-list');
+  if(!el) return;
+  const emps=sortEmps(empsByBu(buId));
+  if(!emps.length){ el.innerHTML='<div style="padding:12px;color:var(--text3);font-size:13px">이 BU에 직원이 없습니다</div>'; return; }
+  el.innerHTML=emps.map(e=>`
+    <label class="emp-item">
+      <input type="checkbox" name="participants" value="${e.id}" ${selected.includes(e.id)?'checked':''}>
+      <span class="emp-pos">${e.position}</span>
+      <span style="font-size:14px;font-weight:600">${e.name}</span>
+    </label>`).join('');
+}
+
+function fBuChange(){
+  const buId=document.getElementById('f-bu').value;
+  if(!buId) return;
+  renderEmpList(buId,[]);
+}
+
+function selectCat(cat){
+  document.querySelectorAll('.cat-btn').forEach(b=>{
+    b.className='cat-btn'+(b.dataset.cat===cat?' selected-'+cat:'');
+  });
+  const r = S.editingId ? S.records[S.editingId] : null;
+  renderDynamicFields(cat, r?.category===cat?r:null);
+}
+
+function renderDynamicFields(cat, r=null){
+  const el=document.getElementById('f-dynamic');
+  if(!el) return;
+  let html='';
+  if(cat==='vacation'){
+    html=`
+      <div class="form-group"><label class="form-label">시작일</label><input type="date" class="form-input" id="f-start-date" value="${r?.startAt?kstOf(r.startAt).toISOString().slice(0,10):dateInputDefault()}"></div>
+      <div class="form-group"><label class="form-label">종료일</label><input type="date" class="form-input" id="f-end-date" value="${r?.endAt?kstOf(r.endAt).toISOString().slice(0,10):dateInputDefault()}"></div>
+      <div class="form-group"><label class="form-label">사유</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 개인 휴가, 연차" value="${r?.purpose||''}"></div>`;
+  } else if(cat==='half_day'){
+    const period=r?.halfPeriod||'am';
+    html=`
+      <div class="form-group"><label class="form-label">날짜</label><input type="date" class="form-input" id="f-start-date" value="${r?.startAt?kstOf(r.startAt).toISOString().slice(0,10):dateInputDefault()}"></div>
+      <div class="form-group"><label class="form-label">반차 구분</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <label class="check-item"><input type="radio" name="half-period" value="am" ${period==='am'?'checked':''}><span class="check-label">🌅 오전 반차</span></label>
+          <label class="check-item"><input type="radio" name="half-period" value="pm" ${period==='pm'?'checked':''}><span class="check-label">🌇 오후 반차</span></label>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">사유</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 병원, 개인 사유" value="${r?.purpose||''}"></div>`;
+  } else if(cat==='early_leave'){
+    html=`
+      <div class="form-group"><label class="form-label">조퇴 시간</label><input type="datetime-local" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+      <div class="form-group"><label class="form-label">사유</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
+  } else { // outing
+    html=`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">출발 시간</label><input type="datetime-local" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+        <div class="form-group"><label class="form-label">귀사 예정</label><input type="datetime-local" class="form-input" id="f-return-dt" value="${r?.expectedReturnAt?dtInputOf(r.expectedReturnAt):''}"></div>
+      </div>
+      <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
+      <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 상암 사무소" value="${r?.place||''}"></div>
+      <div class="form-group"><label class="form-label">목적</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 물류센터" value="${r?.purpose||''}"></div>`;
+  }
+  el.innerHTML=html;
+}
+
+function dtInputOf(ts){
+  const d=kstOf(ts);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+function getCatSelected(){
+  const sel=document.querySelector('.cat-btn[class*="selected-"]');
+  if(!sel) return 'outing';
+  return sel.dataset.cat;
+}
+
+function submitForm(){
+  const cat=getCatSelected();
+  const buId=document.getElementById('f-bu').value;
+  const checked=[...document.querySelectorAll('input[name="participants"]:checked')].map(i=>i.value);
+  const memo=document.getElementById('f-memo')?.value||'';
+  const purpose=document.getElementById('f-purpose')?.value||'';
+  const writerId=S.currentUser;
+
+  if(!buId){ showToast('BU를 선택해주세요'); return; }
+  if(!checked.length){ showToast('대상자를 선택해주세요'); return; }
+
+  let startAt=null, endAt=null, expectedReturnAt=null;
+  let isDirectLeave=false, halfPeriod=null, place='';
+
+  if(cat==='vacation'){
+    const sd=document.getElementById('f-start-date')?.value;
+    const ed=document.getElementById('f-end-date')?.value;
+    if(!sd){ showToast('시작일을 입력해주세요'); return; }
+    startAt=parseLocalDT(sd+'T00:00');
+    endAt=parseLocalDT((ed||sd)+'T23:59');
+  } else if(cat==='half_day'){
+    const sd=document.getElementById('f-start-date')?.value;
+    if(!sd){ showToast('날짜를 입력해주세요'); return; }
+    halfPeriod=document.querySelector('input[name="half-period"]:checked')?.value||'am';
+    startAt=parseLocalDT(sd+'T'+(halfPeriod==='am'?'09:00':'13:30'));
+    endAt=parseLocalDT(sd+'T'+(halfPeriod==='am'?'13:00':'18:00'));
+  } else if(cat==='early_leave'){
+    const sd=document.getElementById('f-start-dt')?.value;
+    if(!sd){ showToast('조퇴 시간을 입력해주세요'); return; }
+    startAt=parseLocalDT(sd);
+  } else {
+    const sd=document.getElementById('f-start-dt')?.value;
+    const rd=document.getElementById('f-return-dt')?.value;
+    if(!sd){ showToast('출발 시간을 입력해주세요'); return; }
+    startAt=parseLocalDT(sd);
+    if(rd) expectedReturnAt=parseLocalDT(rd);
+    isDirectLeave=document.getElementById('f-direct')?.checked||false;
+    place=document.getElementById('f-place')?.value||'';
+  }
+
+  const now=Date.now();
+  const isPostEntry=startAt < now;
+  const id=S.editingId||('r_'+now+'_'+Math.random().toString(36).slice(2,7));
+  const existing=S.editingId?S.records[S.editingId]:null;
+
+  const rec={
+    id, category:cat, buId, writerId: writerId||checked[0],
+    participantIds:checked, startAt, endAt, expectedReturnAt,
+    actualReturnAt: existing?.actualReturnAt||null,
+    isDirectLeave, halfPeriod, place, purpose, memo,
+    isPostEntry, createdAt: existing?.createdAt||now, updatedAt:now
+  };
+
+  saveRecord(rec);
+  closeModal();
+  showToast(S.editingId?'수정되었습니다':'등록되었습니다');
+  S.editingId=null;
+}
+
+// ── 직원 추가/수정 ─────────────────────────────────
+function openEmpEdit(id){
+  const e=S.employees[id];
+  openEmpModal(e);
+}
+function openEmpAdd(){ openEmpModal(null); }
+function openEmpModal(e){
+  const buOpts=buSorted().map(b=>`<option value="${b.id}"${e?.buId===b.id?' selected':''}>${b.name}</option>`).join('');
+  document.getElementById('overlay-content').className='modal center-modal';
+  document.getElementById('overlay-content').innerHTML=`
+    <div class="modal-handle"></div>
+    <div class="modal-header"><span class="modal-title">${e?'직원 수정':'직원 추가'}</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="padding:0 20px 24px">
+      <div class="form-group"><label class="form-label">이름</label><input class="form-input" id="em-name" value="${e?.name||''}"></div>
+      <div class="form-group"><label class="form-label">직급</label><input class="form-input" id="em-pos" value="${e?.position||''}"></div>
+      <div class="form-group"><label class="form-label">소속 BU</label><select class="form-input" id="em-bu"><option value="">선택</option>${buOpts}</select></div>
+      <button class="btn-primary" onclick="saveEmpModal('${e?.id||''}')">저장</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('show','center');
+}
+function saveEmpModal(id){
+  const name=document.getElementById('em-name').value.trim();
+  const pos=document.getElementById('em-pos').value.trim();
+  const buId=document.getElementById('em-bu').value;
+  if(!name||!buId){ showToast('이름과 BU를 입력해주세요'); return; }
+  const emp={id:id||('emp_'+Date.now()), name, position:pos, buId, active:true, createdAt:id?S.employees[id]?.createdAt:Date.now()};
+  saveEmployee(emp); closeModal(); showToast('저장되었습니다');
+}
+
+// ── BU 추가/수정 ──────────────────────────────────
+function openBuEdit(id){ const b=S.bus[id]; openBuModal(b); }
+function openBuAdd(){ openBuModal(null); }
+function openBuModal(b){
+  document.getElementById('overlay-content').className='modal center-modal';
+  document.getElementById('overlay-content').innerHTML=`
+    <div class="modal-handle"></div>
+    <div class="modal-header"><span class="modal-title">${b?'BU 수정':'BU 추가'}</span><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div style="padding:0 20px 24px">
+      <div class="form-group"><label class="form-label">BU 이름</label><input class="form-input" id="bu-name" value="${b?.name||''}"></div>
+      <div class="form-group"><label class="form-label">정렬 순서</label><input type="number" class="form-input" id="bu-order" value="${b?.sortOrder||Object.keys(S.bus).length+1}"></div>
+      <button class="btn-primary" onclick="saveBuModal('${b?.id||''}')">저장</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('show','center');
+}
+function saveBuModal(id){
+  const name=document.getElementById('bu-name').value.trim();
+  if(!name){ showToast('BU 이름을 입력해주세요'); return; }
+  const bu={id:id||('bu_'+Date.now()), name, sortOrder:parseInt(document.getElementById('bu-order').value)||99, active:true};
+  saveBU(bu); closeModal(); showToast('저장되었습니다');
+}
+
+// ═══════════════════════════════════════════
+// 모달 / 토스트 유틸
+// ═══════════════════════════════════════════
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show','center');
+  document.getElementById('overlay-content').innerHTML='';
+  S.editingId=null;
+}
+function closeOverlay(e){
+  if(e.target===document.getElementById('overlay')) closeModal();
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════
+// 앱 시작
+// ═══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  initFirebase();
+  const savedUser=localStorage.getItem('pm_user');
+  if(savedUser && S.employees[savedUser]){
+    S.currentUser=savedUser;
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('app').style.display='';
+  } else {
+    // setup 화면에 BU 목록 채우기는 loadLocalData 후에
+    setTimeout(()=>{
+      loadLocalData();
+      populateSetup();
+    },200);
+  }
+  // 1분마다 상태 갱신
+  setInterval(()=>{ if(S.tab==='dashboard') renderDashboard(); },60000);
+});
+</script>
+</body>
+</html>
