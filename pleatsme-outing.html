@@ -1149,6 +1149,38 @@ function selectCat(cat){
   renderDynamicFields(cat, r?.category===cat?r:null);
 }
 
+// ── 10분 단위 시간 선택기 ───────────────────────────
+function timePickerHTML(idPrefix, ts=null, label='시간', required=false){
+  const d = ts ? kstOf(ts) : kstNow();
+  if(!ts){ // 기본값: 현재 시각에서 10분 올림
+    const m = Math.ceil(d.getMinutes()/10)*10;
+    if(m>=60){ d.setHours(d.getHours()+1); d.setMinutes(0); } else { d.setMinutes(m); }
+  }
+  const curDate = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const curH = d.getHours();
+  const curM = Math.round(d.getMinutes()/10)*10 % 60;
+  let hOpts='', mOpts='';
+  for(let h=0;h<24;h++) hOpts+=`<option value="${h}" ${curH===h?'selected':''}>${String(h).padStart(2,'0')}시</option>`;
+  [0,10,20,30,40,50].forEach(m=>mOpts+=`<option value="${m}" ${curM===m?'selected':''}>${String(m).padStart(2,'0')}분</option>`);
+  const star = required ? ' <span style="color:#DC2626">*</span>' : '';
+  return `
+    <div class="form-group">
+      <label class="form-label">${label}${star}</label>
+      <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:6px">
+        <input type="date" class="form-input" id="${idPrefix}-date" value="${curDate}">
+        <select class="form-input" id="${idPrefix}-h" style="padding:11px 6px">${hOpts}</select>
+        <select class="form-input" id="${idPrefix}-m" style="padding:11px 6px">${mOpts}</select>
+      </div>
+    </div>`;
+}
+function readTimePicker(idPrefix){
+  const date = document.getElementById(idPrefix+'-date')?.value;
+  const h    = document.getElementById(idPrefix+'-h')?.value;
+  const m    = document.getElementById(idPrefix+'-m')?.value;
+  if(!date||h===undefined||m===undefined) return null;
+  return parseLocalDT(date+'T'+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+}
+
 function renderDynamicFields(cat, r=null){
   const el=document.getElementById('f-dynamic');
   if(!el) return;
@@ -1170,20 +1202,15 @@ function renderDynamicFields(cat, r=null){
       </div>
       <div class="form-group"><label class="form-label">사유</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 병원, 개인 사유" value="${r?.purpose||''}"></div>`;
   } else if(cat==='early_leave'){
-    html=`
-      <div class="form-group"><label class="form-label">조퇴 시간</label><input type="datetime-local" step="600" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+    html=timePickerHTML('f-start', r?.startAt, '조퇴 시간', true)+`
       <div class="form-group"><label class="form-label">사유 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
   } else if(cat==='direct_out'){
-    html=`
-      <div class="form-group"><label class="form-label">출발 시간 <span style="color:#DC2626">*</span></label><input type="datetime-local" step="600" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+    html=timePickerHTML('f-start', r?.startAt, '출발 시간', true)+`
       <div class="form-group"><label class="form-label">목적지 장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else { // outing
-    html=`
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">출발 시간</label><input type="datetime-local" step="600" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
-        <div class="form-group"><label class="form-label">귀사 예정</label><input type="datetime-local" step="600" class="form-input" id="f-return-dt" value="${r?.expectedReturnAt?dtInputOf(r.expectedReturnAt):''}"></div>
-      </div>
+    html=timePickerHTML('f-start', r?.startAt, '출발 시간', true)+
+         timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정', false)+`
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 상암 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 물류센터" value="${r?.purpose||''}"></div>`;
@@ -1243,28 +1270,24 @@ function submitForm(){
     endAt = parseLocalDT(sd+'T'+(halfPeriod==='am'?'13:00':'18:00'));
 
   } else if(cat === 'early_leave'){
-    const sd = document.getElementById('f-start-dt')?.value;
-    if(!sd){ showFormError('조퇴 시간을 입력해주세요'); return; }
+    startAt = readTimePicker('f-start');
+    if(!startAt){ showFormError('조퇴 시간을 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('사유를 입력해주세요'); return; }
-    startAt = parseLocalDT(sd);
 
   } else if(cat === 'direct_out'){
-    const sd = document.getElementById('f-start-dt')?.value;
-    if(!sd){ showFormError('출발 시간을 입력해주세요'); return; }
+    startAt = readTimePicker('f-start');
+    if(!startAt){ showFormError('출발 시간을 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('목적을 입력해주세요'); return; }
-    startAt = parseLocalDT(sd);
     place = (document.getElementById('f-place')?.value || '').trim();
 
   } else {
-    const sd = document.getElementById('f-start-dt')?.value;
-    if(!sd){ showFormError('출발 시간을 입력해주세요'); return; }
+    startAt = readTimePicker('f-start');
+    if(!startAt){ showFormError('출발 시간을 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('목적을 입력해주세요'); return; }
-    const rd = document.getElementById('f-return-dt')?.value;
-    startAt = parseLocalDT(sd);
-    if(rd) expectedReturnAt = parseLocalDT(rd);
+    expectedReturnAt = readTimePicker('f-return');
     isDirectLeave = document.getElementById('f-direct')?.checked || false;
     place = (document.getElementById('f-place')?.value || '').trim();
   }
