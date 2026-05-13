@@ -975,7 +975,8 @@ function openForm(editId=null){
         <label class="form-label">메모</label>
         <textarea class="form-input" id="f-memo" rows="2" placeholder="선택 입력">${r?.memo||''}</textarea>
       </div>
-      <button class="btn-primary" onclick="submitForm()">💾 저장</button>
+      <div id="f-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:12px 14px;font-size:14px;font-weight:600;margin-bottom:10px;border:1.5px solid #FCA5A5"></div>
+      <button id="f-save-btn" class="btn-primary" onclick="submitForm()">💾 저장</button>
     </div>`;
 
   overlayEl.classList.add('show');
@@ -1061,15 +1062,26 @@ function getCatSelected(){
   return sel.dataset.cat;
 }
 
+function showFormError(msg){
+  const el=document.getElementById('f-error');
+  if(el){ el.textContent='⚠️ '+msg; el.style.display='block'; el.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  else showToast('⚠️ '+msg);
+}
+function hideFormError(){
+  const el=document.getElementById('f-error');
+  if(el) el.style.display='none';
+}
+
 function submitForm(){
+  hideFormError();
   const cat = getCatSelected();
   const buId = document.getElementById('f-bu').value;
   const checked = [...document.querySelectorAll('input[name="participants"]:checked')].map(i=>i.value);
   const memo = document.getElementById('f-memo')?.value || '';
   const writerId = S.currentUser;
 
-  if(!buId){ showToast('⚠️ BU를 선택해주세요'); return; }
-  if(!checked.length){ showToast('⚠️ 대상자를 선택해주세요'); return; }
+  if(!buId){ showFormError('BU를 선택해주세요'); return; }
+  if(!checked.length){ showFormError('대상자를 선택해주세요'); return; }
 
   let startAt=null, endAt=null, expectedReturnAt=null;
   let isDirectLeave=false, halfPeriod=null, place='', purpose='';
@@ -1077,14 +1089,14 @@ function submitForm(){
   if(cat === 'vacation'){
     const sd = document.getElementById('f-start-date')?.value;
     const ed = document.getElementById('f-end-date')?.value;
-    if(!sd){ showToast('⚠️ 시작일을 입력해주세요'); return; }
+    if(!sd){ showFormError('시작일을 입력해주세요'); return; }
     purpose = document.getElementById('f-purpose')?.value || '';
     startAt = parseLocalDT(sd+'T00:00');
     endAt = parseLocalDT((ed||sd)+'T23:59');
 
   } else if(cat === 'half_day'){
     const sd = document.getElementById('f-start-date')?.value;
-    if(!sd){ showToast('⚠️ 날짜를 입력해주세요'); return; }
+    if(!sd){ showFormError('날짜를 입력해주세요'); return; }
     purpose = document.getElementById('f-purpose')?.value || '';
     halfPeriod = document.querySelector('input[name="half-period"]:checked')?.value || 'am';
     startAt = parseLocalDT(sd+'T'+(halfPeriod==='am'?'09:00':'13:30'));
@@ -1092,16 +1104,16 @@ function submitForm(){
 
   } else if(cat === 'early_leave'){
     const sd = document.getElementById('f-start-dt')?.value;
-    if(!sd){ showToast('⚠️ 조퇴 시간을 입력해주세요'); return; }
+    if(!sd){ showFormError('조퇴 시간을 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
-    if(!purpose){ showToast('⚠️ 사유를 입력해주세요'); return; }
+    if(!purpose){ showFormError('사유를 입력해주세요'); return; }
     startAt = parseLocalDT(sd);
 
   } else {
     const sd = document.getElementById('f-start-dt')?.value;
-    if(!sd){ showToast('⚠️ 출발 시간을 입력해주세요'); return; }
+    if(!sd){ showFormError('출발 시간을 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
-    if(!purpose){ showToast('⚠️ 목적을 입력해주세요'); return; }
+    if(!purpose){ showFormError('목적을 입력해주세요'); return; }
     const rd = document.getElementById('f-return-dt')?.value;
     startAt = parseLocalDT(sd);
     if(rd) expectedReturnAt = parseLocalDT(rd);
@@ -1124,7 +1136,7 @@ function submitForm(){
 
   saveRecord(rec);
   closeModal();
-  showToast(S.editingId?'수정되었습니다':'등록되었습니다');
+  showToast('등록되었습니다');
   S.editingId = null;
 }
 
