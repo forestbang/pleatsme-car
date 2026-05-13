@@ -19,6 +19,7 @@
   --half:#F59E0B;--half-bg:#FFFBEB;--half-t:#92400E;
   --outing:#6B7280;--outing-bg:#F3F4F6;--outing-t:#374151;
   --early:#EC4899;--early-bg:#FDF2F8;--early-t:#831843;
+  --direct-out:#0EA5E9;--direct-out-bg:#F0F9FF;--direct-out-t:#0369A1;
   --out-color:#D97706;--out-bg:#FFFBEB;
   --done-color:#059669;--done-bg:#ECFDF5;
   --direct-color:#7C3AED;--direct-bg:#EDE9FE;
@@ -62,6 +63,7 @@ input,select,textarea{font-family:inherit}
 .badge-half_day{background:var(--half-bg);color:var(--half-t)}
 .badge-outing{background:var(--outing-bg);color:var(--outing-t)}
 .badge-early_leave{background:var(--early-bg);color:var(--early-t)}
+.badge-direct_out{background:var(--direct-out-bg);color:var(--direct-out-t)}
 .badge-out{background:var(--out-bg);color:var(--out-color)}
 .badge-done{background:var(--done-bg);color:var(--done-color)}
 .badge-direct{background:var(--direct-bg);color:var(--direct-color)}
@@ -82,6 +84,7 @@ input,select,textarea{font-family:inherit}
 .rec-card.half_day{border-left-color:var(--half)}
 .rec-card.outing{border-left-color:var(--outing)}
 .rec-card.early_leave{border-left-color:var(--early)}
+.rec-card.direct_out{border-left-color:var(--direct-out)}
 .rec-card.past{opacity:.55}
 .rec-card.active-out{background:linear-gradient(135deg,#FFFBEB 0%,#FFF 60%);border-left-color:var(--out-color)}
 .rec-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -108,6 +111,7 @@ input,select,textarea{font-family:inherit}
 .cat-btn.selected-half_day{border-color:var(--half);background:var(--half-bg);color:var(--half-t)}
 .cat-btn.selected-outing{border-color:var(--outing);background:var(--outing-bg);color:var(--outing-t)}
 .cat-btn.selected-early_leave{border-color:var(--early);background:var(--early-bg);color:var(--early-t)}
+.cat-btn.selected-direct_out{border-color:var(--direct-out);background:var(--direct-out-bg);color:var(--direct-out-t)}
 .emp-list{max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff}
 .emp-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
 .emp-item:last-child{border-bottom:none}
@@ -220,6 +224,10 @@ input,select,textarea{font-family:inherit}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       캘린더
     </button>
+    <button class="nav-item" onclick="switchTab('report')" id="nav-report">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      리포트
+    </button>
     <button class="nav-item" onclick="switchTab('admin')" id="nav-admin">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       직원관리
@@ -259,10 +267,11 @@ const ADMIN_PIN = "0000"; // ← 관리자 PIN
 
 // ── 카테고리 정의 ──────────────────────────────────
 const CATS = {
-  vacation:    { label:'휴가', icon:'🏖', color:'var(--vacation)', bg:'var(--vacation-bg)' },
-  half_day:    { label:'반차', icon:'🌓', color:'var(--half)',     bg:'var(--half-bg)'     },
-  outing:      { label:'외출', icon:'🚗', color:'var(--outing)',   bg:'var(--outing-bg)'   },
-  early_leave: { label:'조퇴', icon:'🏠', color:'var(--early)',    bg:'var(--early-bg)'    },
+  vacation:     { label:'휴가', icon:'🏖', color:'var(--vacation)', bg:'var(--vacation-bg)' },
+  half_day:     { label:'반차', icon:'🌓', color:'var(--half)',     bg:'var(--half-bg)'     },
+  outing:       { label:'외출', icon:'🚗', color:'var(--outing)',   bg:'var(--outing-bg)'   },
+  early_leave:  { label:'조퇴', icon:'🏠', color:'var(--early)',    bg:'var(--early-bg)'    },
+  direct_out:   { label:'직출', icon:'📍', color:'var(--direct-out)', bg:'var(--direct-out-bg)' },
 };
 
 // ── BU 초기 데이터 ─────────────────────────────────
@@ -584,7 +593,7 @@ function switchTab(tab){
   S.tab=tab;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('nav-'+tab)?.classList.add('active');
-  document.getElementById('fab-btn').style.display = tab==='admin' ? 'none' : '';
+  document.getElementById('fab-btn').style.display = (tab==='admin'||tab==='report') ? 'none' : '';
   renderApp();
 }
 function renderApp(){
@@ -592,6 +601,7 @@ function renderApp(){
   if(S.tab==='dashboard') renderDashboard();
   else if(S.tab==='list') renderList();
   else if(S.tab==='calendar') renderCalendar();
+  else if(S.tab==='report') renderReport();
   else if(S.tab==='admin') renderAdmin();
 }
 
@@ -610,6 +620,7 @@ function renderDashboard(){
   const vacToday=todayRecs.filter(r=>r.category==='vacation');
   const halfToday=todayRecs.filter(r=>r.category==='half_day');
   const earlyToday=todayRecs.filter(r=>r.category==='early_leave');
+  const directOutToday=todayRecs.filter(r=>r.category==='direct_out');
   const outingToday=todayRecs.filter(r=>r.category==='outing');
   const countOut=outNow.length;
   const countV=vacToday.length;
@@ -622,7 +633,9 @@ function renderDashboard(){
     <div class="summary-card"><div class="summary-label">🏖 오늘 휴가</div><div class="summary-num blue">${countV}명</div></div>
     <div class="summary-card"><div class="summary-label">🌓 오늘 반차</div><div class="summary-num amber">${countH}명</div></div>
     <div class="summary-card"><div class="summary-label">🏠 오늘 조퇴</div><div class="summary-num pink">${countE}명</div></div>
-  </div>`;
+  </div>
+  ${directOutToday.length>0?`<div class="card" style="margin-bottom:12px;border-left:4px solid var(--direct-out)"><div style="font-size:12px;color:var(--direct-out-t);font-weight:700;margin-bottom:4px">📍 오늘 직출</div><div style="font-size:14px;font-weight:600">${directOutToday.map(r=>getParticipantNames(r.participantIds)).join(' / ')}</div></div>`:''}
+  `;
 
   if(countOut>0){
     html+=`<div class="section-title">🟠 지금 외출 중</div>`;
@@ -859,6 +872,126 @@ function calMove(d){
 function calDayClick(d){ S.calSelDay=d; renderCalendar(); }
 
 // ═══════════════════════════════════════════
+// 리포트 탭
+// ═══════════════════════════════════════════
+function renderReport(){
+  const recs = Object.values(S.records);
+  const kst = kstNow();
+  const ym = `${kst.getFullYear()}-${String(kst.getMonth()+1).padStart(2,'0')}`;
+
+  // 이번 달 집계
+  const thisMonth = recs.filter(r=>{
+    const d = kstOf(r.startAt);
+    return d.getFullYear()===kst.getFullYear() && d.getMonth()===kst.getMonth();
+  });
+
+  // BU별 카테고리 집계
+  const buStats = {};
+  buSorted().forEach(b=>{ buStats[b.id]={name:b.name, vacation:0, half_day:0, outing:0, early_leave:0, direct_out:0}; });
+  thisMonth.forEach(r=>{
+    if(buStats[r.buId]) buStats[r.buId][r.category]=(buStats[r.buId][r.category]||0)+1;
+  });
+
+  const statRows = Object.values(buStats).map(b=>`
+    <tr>
+      <td style="font-weight:600">${b.name}</td>
+      <td style="text-align:center;color:var(--vacation-t)">${b.vacation||0}</td>
+      <td style="text-align:center;color:var(--half-t)">${b.half_day||0}</td>
+      <td style="text-align:center;color:var(--outing-t)">${b.outing||0}</td>
+      <td style="text-align:center;color:var(--early-t)">${b.early_leave||0}</td>
+      <td style="text-align:center;color:var(--direct-out-t)">${b.direct_out||0}</td>
+    </tr>`).join('');
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px">📊 ${kst.getMonth()+1}월 현황 요약</div>
+      <div style="font-size:12px;color:var(--text2)">총 ${thisMonth.length}건</div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:8px 6px;color:var(--text2)">BU</th>
+            <th style="text-align:center;padding:8px 4px;color:var(--vacation-t)">휴가</th>
+            <th style="text-align:center;padding:8px 4px;color:var(--half-t)">반차</th>
+            <th style="text-align:center;padding:8px 4px;color:var(--outing-t)">외출</th>
+            <th style="text-align:center;padding:8px 4px;color:var(--early-t)">조퇴</th>
+            <th style="text-align:center;padding:8px 4px;color:var(--direct-out-t)">직출</th>
+          </tr>
+        </thead>
+        <tbody>${statRows}</tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">📥 엑셀 다운로드</div>
+      <div class="form-group">
+        <label class="form-label">기간 선택</label>
+        <div class="form-row">
+          <input type="date" class="form-input" id="r-from" value="${kst.getFullYear()}-${String(kst.getMonth()+1).padStart(2,'0')}-01">
+          <input type="date" class="form-input" id="r-to" value="${kst.getFullYear()}-${String(kst.getMonth()+1).padStart(2,'0')}-${String(new Date(kst.getFullYear(),kst.getMonth()+1,0).getDate()).padStart(2,'0')}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">BU 필터</label>
+        <select class="form-input" id="r-bu">
+          <option value="all">전체 BU</option>
+          ${buSorted().map(b=>`<option value="${b.id}">${b.name}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn-primary" onclick="downloadExcel()">📥 엑셀 파일 다운로드</button>
+    </div>`;
+}
+
+function downloadExcel(){
+  const from = parseLocalDT(document.getElementById('r-from').value+'T00:00');
+  const to   = parseLocalDT(document.getElementById('r-to').value+'T23:59');
+  const buId = document.getElementById('r-bu').value;
+
+  const recs = Object.values(S.records).filter(r=>{
+    return r.startAt>=from && r.startAt<=to && (buId==='all'||r.buId===buId);
+  }).sort((a,b)=>a.startAt-b.startAt);
+
+  if(!recs.length){ showToast('해당 기간에 기록이 없습니다'); return; }
+
+  const CAT_LABEL={vacation:'휴가',half_day:'반차',outing:'외출',early_leave:'조퇴',direct_out:'직출'};
+  const rows=[['날짜','BU','이름','구분','출발시간','귀사예정','실제귀사','직퇴','직출','장소','목적','메모','사후기재','작성일시']];
+  recs.forEach(r=>{
+    const names=getParticipantNames(r.participantIds)||getEmp(r.writerId).name;
+    rows.push([
+      kstOf(r.startAt).toLocaleDateString('ko-KR'),
+      getBU(r.buId).name,
+      names,
+      CAT_LABEL[r.category]||r.category,
+      r.startAt?fmtDatetime(r.startAt):'',
+      r.expectedReturnAt?fmtDatetime(r.expectedReturnAt):'',
+      r.actualReturnAt?fmtDatetime(r.actualReturnAt):'',
+      r.isDirectLeave?'O':'',
+      r.category==='direct_out'?'O':'',
+      r.place||'',
+      r.purpose||'',
+      r.memo||'',
+      r.isPostEntry?'O':'',
+      fmtDatetime(r.createdAt),
+    ]);
+  });
+
+  // CSV → BOM 포함 UTF-8 (한글 엑셀 호환)
+  const csv = '\uFEFF' + rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url;
+  const from_d=document.getElementById('r-from').value;
+  const to_d=document.getElementById('r-to').value;
+  a.download=`플리츠미_외출기록_${from_d}_${to_d}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('다운로드 완료! 엑셀로 열어보세요');
+}
+
+// ═══════════════════════════════════════════
 // 직원/관리 화면
 // ═══════════════════════════════════════════
 function renderAdmin(){
@@ -1037,7 +1170,12 @@ function renderDynamicFields(cat, r=null){
   } else if(cat==='early_leave'){
     html=`
       <div class="form-group"><label class="form-label">조퇴 시간</label><input type="datetime-local" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
-      <div class="form-group"><label class="form-label">사유</label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
+      <div class="form-group"><label class="form-label">사유 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
+  } else if(cat==='direct_out'){
+    html=`
+      <div class="form-group"><label class="form-label">출발 시간 <span style="color:#DC2626">*</span></label><input type="datetime-local" class="form-input" id="f-start-dt" value="${r?.startAt?dtInputOf(r.startAt):dtInputDefault()}"></div>
+      <div class="form-group"><label class="form-label">목적지 장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
+      <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else { // outing
     html=`
       <div class="form-row">
@@ -1108,6 +1246,14 @@ function submitForm(){
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('사유를 입력해주세요'); return; }
     startAt = parseLocalDT(sd);
+
+  } else if(cat === 'direct_out'){
+    const sd = document.getElementById('f-start-dt')?.value;
+    if(!sd){ showFormError('출발 시간을 입력해주세요'); return; }
+    purpose = (document.getElementById('f-purpose')?.value || '').trim();
+    if(!purpose){ showFormError('목적을 입력해주세요'); return; }
+    startAt = parseLocalDT(sd);
+    place = (document.getElementById('f-place')?.value || '').trim();
 
   } else {
     const sd = document.getElementById('f-start-dt')?.value;
