@@ -1074,6 +1074,7 @@ function submitForm(){
 
   let startAt=null, endAt=null, expectedReturnAt=null;
   let isDirectLeave=false, halfPeriod=null, place='';
+  let purposeVal;
 
   if(cat==='vacation'){
     const sd=document.getElementById('f-start-date')?.value;
@@ -1094,15 +1095,19 @@ function submitForm(){
   } else {
     const sd=document.getElementById('f-start-dt')?.value;
     const rd=document.getElementById('f-return-dt')?.value;
-    if(!sd){ showToast('출발 시간을 입력해주세요'); return; }
-    if(!purpose.trim()){ showToast('목적을 입력해주세요'); return; }
+    const purposeVal=(document.getElementById('f-purpose')?.value||'').trim();
+    const placeVal=(document.getElementById('f-place')?.value||'').trim();
+    if(!sd){ showToast('⚠️ 출발 시간을 입력해주세요'); return; }
+    if(!purposeVal){ showToast('⚠️ 목적을 입력해주세요'); return; }
     startAt=parseLocalDT(sd);
     if(rd) expectedReturnAt=parseLocalDT(rd);
     isDirectLeave=document.getElementById('f-direct')?.checked||false;
-    place=document.getElementById('f-place')?.value||'';
+    place=placeVal;
   }
 
   const now=Date.now();
+  // 카테고리별로 블록 안에서 이미 읽은 경우 덮어쓰기
+  const finalPurpose = (typeof purposeVal !== 'undefined') ? purposeVal : purpose;
   const isPostEntry=startAt < now;
   const id=S.editingId||('r_'+now+'_'+Math.random().toString(36).slice(2,7));
   const existing=S.editingId?S.records[S.editingId]:null;
@@ -1111,7 +1116,7 @@ function submitForm(){
     id, category:cat, buId, writerId: writerId||checked[0],
     participantIds:checked, startAt, endAt, expectedReturnAt,
     actualReturnAt: existing?.actualReturnAt||null,
-    isDirectLeave, halfPeriod, place, purpose, memo,
+    isDirectLeave, halfPeriod, place, purpose:finalPurpose, memo,
     isPostEntry, createdAt: existing?.createdAt||now, updatedAt:now
   };
 
