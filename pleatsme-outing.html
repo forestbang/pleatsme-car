@@ -1385,21 +1385,66 @@ function showToast(msg){
 // 앱 시작
 // ═══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
-  initFirebase();
-  const savedUser=localStorage.getItem('pm_user');
-  if(savedUser && S.employees[savedUser]){
-    S.currentUser=savedUser;
-    document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('app').style.display='';
-  } else {
-    // setup 화면에 BU 목록 채우기는 loadLocalData 후에
-    setTimeout(()=>{
+  // Firebase 먼저 초기화
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    S.db = firebase.database();
+    S.fbOk = true;
+  } catch(e) {
+    console.warn('Firebase 초기화 실패, 로컬 모드');
+  }
+
+  const savedUser = localStorage.getItem('pm_user');
+
+  if(S.fbOk) {
+    // Firebase에서 데이터 로드 후 실시간 구독
+    S.db.ref('outing').on('value', snap => {
+      const d = snap.val() || {};
+      // BU/직원 초기 데이터가 없으면 기본값 넣기
+      if(!d.bus) {
+        const bus={}, emp={};
+        INIT_BUS.forEach(b=>{ bus[b.id]={...b,active:true}; });
+        INIT_EMPLOYEES.forEach(e=>{ emp[e.id]={...e,active:true,createdAt:Date.now()}; });
+        S.db.ref('outing/bus').set(bus);
+        S.db.ref('outing/employees').set(emp);
+        S.bus=bus; S.employees=emp; S.records={};
+      } else {
+        S.bus = d.bus||{};
+        S.employees = d.employees||{};
+        S.records = d.records||{};
+      }
+      saveLocal();
+      // 사용자 복원
+      if(savedUser && S.employees[savedUser]) {
+        S.currentUser = savedUser;
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('app').style.display='';
+      } else {
+        populateSetup();
+      }
+      updateHeaderUser();
+      renderApp();
+    }, err => {
+      console.warn('Firebase 읽기 실패, 로컬 모드:', err);
       loadLocalData();
       populateSetup();
-    },200);
+      renderApp();
+    });
+
+  } else {
+    // 로컬 모드
+    loadLocalData();
+    if(savedUser && S.employees[savedUser]) {
+      S.currentUser = savedUser;
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('app').style.display='';
+    } else {
+      populateSetup();
+    }
+    renderApp();
   }
-  // 1분마다 상태 갱신
-  setInterval(()=>{ if(S.tab==='dashboard') renderDashboard(); },60000);
+
+  setInterval(()=>{ if(S.tab==='dashboard') renderDashboard(); }, 60000);
 });
 </script>
 </body>
