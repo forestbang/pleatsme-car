@@ -1012,6 +1012,17 @@ function renderAdmin(){
 
   document.getElementById('main-content').innerHTML=`
     <div class="admin-section">
+      <div class="admin-title">📋 기록 관리</div>
+      <div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap">
+        <select class="form-input" id="admin-rec-bu" style="flex:1;font-size:13px;padding:8px" onchange="renderAdminRecs()">
+          <option value="all">전체 BU</option>
+          ${buSorted().map(b=>`<option value="${b.id}">${b.name}</option>`).join('')}
+        </select>
+        <input type="date" class="form-input" id="admin-rec-date" style="flex:1;font-size:13px;padding:8px" onchange="renderAdminRecs()">
+      </div>
+      <div id="admin-rec-list"></div>
+    </div>
+    <div class="admin-section">
       <div class="admin-title">👥 직원 관리</div>
       <button class="btn-secondary" style="margin-bottom:12px" onclick="openEmpAdd()">+ 직원 추가</button>
       ${empRows}
@@ -1027,6 +1038,53 @@ function renderAdmin(){
     <div class="admin-section">
       <button class="btn-secondary" style="color:var(--post-color);border-color:var(--post-color)" onclick="adminLogout()">🔓 관리자 모드 종료</button>
     </div>`;
+  renderAdminRecs();
+}
+function renderAdminRecs(){
+  const buId = document.getElementById('admin-rec-bu')?.value || 'all';
+  const dateVal = document.getElementById('admin-rec-date')?.value || '';
+  const el = document.getElementById('admin-rec-list');
+  if(!el) return;
+
+  let recs = Object.values(S.records);
+  if(buId !== 'all') recs = recs.filter(r => r.buId === buId);
+  if(dateVal){
+    recs = recs.filter(r => {
+      const d = kstOf(r.startAt);
+      const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      return ds === dateVal;
+    });
+  }
+  recs.sort((a,b) => b.startAt - a.startAt);
+
+  if(!recs.length){ el.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">해당 기록이 없습니다</div></div>`; return; }
+
+  const CAT_LABEL={vacation:'휴가',half_day:'반차',outing:'외출',early_leave:'조퇴',direct_out:'직출',biz_trip:'출장'};
+  el.innerHTML = recs.map(r => {
+    const names = getParticipantNames(r.participantIds) || getEmp(r.writerId).name;
+    const bu = getBU(r.buId).name;
+    const cat = CAT_LABEL[r.category] || r.category;
+    const date = kstOf(r.startAt).toLocaleDateString('ko-KR',{month:'short',day:'numeric'});
+    return `<div class="emp-row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:13px;font-weight:700">${names}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${date} · <span class="badge badge-${r.category}">${cat}</span> · ${bu}</div>
+          ${r.purpose ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">📝 ${r.purpose}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-sm btn-edit" onclick="openForm('${r.id}')">✏️ 수정</button>
+          <button class="btn-sm btn-warn" onclick="adminDeleteRec('${r.id}')">🗑 삭제</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function adminDeleteRec(id){
+  if(!confirm('이 기록을 삭제할까요?')) return;
+  deleteRecord(id);
+  showToast('삭제되었습니다');
+  setTimeout(()=>renderAdminRecs(), 300);
 }
 function checkPin(){
   const v=document.getElementById('pin-input')?.value;
