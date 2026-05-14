@@ -624,10 +624,10 @@ function renderDashboard(){
   const earlyToday=todayRecs.filter(r=>r.category==='early_leave');
   const directOutToday=todayRecs.filter(r=>r.category==='direct_out');
   const outingToday=todayRecs.filter(r=>r.category==='outing');
-  const countOut=outNow.length;
-  const countV=vacToday.length;
-  const countH=halfToday.length;
-  const countE=earlyToday.length;
+  const countOut = outNow.reduce((sum, r) => sum + (r.participantIds?.length || 1), 0);
+  const countV = vacToday.reduce((sum, r) => sum + (r.participantIds?.length || 1), 0);
+  const countH = halfToday.reduce((sum, r) => sum + (r.participantIds?.length || 1), 0);
+  const countE = earlyToday.reduce((sum, r) => sum + (r.participantIds?.length || 1), 0);
 
   let html=`
   <div class="summary-grid">
