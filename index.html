@@ -258,11 +258,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div></div>
 
 <nav class="bnav">
-  <div class="bnav-item active" onclick="switchTab(&#39;reserve&#39;)" id="nav-reserve"><div class="bnav-icon">📝</div><div>예약신청</div></div>
-  <div class="bnav-item" onclick="switchTab(&#39;schedule&#39;)" id="nav-schedule"><div class="bnav-icon">📅</div><div>예약현황</div></div>
-  <div class="bnav-item" onclick="switchTab(&#39;dashboard&#39;)" id="nav-dashboard"><div class="bnav-icon">🏠</div><div>대시보드</div></div>
-  <div class="bnav-item" onclick="switchTab(&#39;fleet&#39;)" id="nav-fleet"><div class="bnav-icon">🔧</div><div>차량정비</div></div>
-  <div class="bnav-item" onclick="switchTab(&#39;report&#39;)" id="nav-report"><div class="bnav-icon">📊</div><div>리포트</div></div>
+  <div class="bnav-item active" onclick="switchTab('reserve')" id="nav-reserve"><div class="bnav-icon">📝</div><div>예약신청</div></div>
+  <div class="bnav-item" onclick="switchTab('schedule')" id="nav-schedule"><div class="bnav-icon">📅</div><div>예약현황</div></div>
+  <div class="bnav-item" onclick="switchTab('dashboard')" id="nav-dashboard"><div class="bnav-icon">🏠</div><div>대시보드</div></div>
+  <div class="bnav-item" onclick="switchTab('report')" id="nav-report"><div class="bnav-icon">📊</div><div>리포트</div></div>
+  <div class="bnav-item" onclick="goAdmin()" id="nav-admin"><div class="bnav-icon">🔐</div><div>관리자</div></div>
 </nav>
 
 <!-- Firebase SDK -->
@@ -310,6 +310,7 @@ let S={
   maintForm:{vehicleId:'',date:todayStr(),type:'',description:'',shop:'',cost:'',mileage:''},
   showMaintForm:null,
   editingResId:null,
+  adminUnlocked:false,
   loaded:true,
 };
 
@@ -433,15 +434,17 @@ function buildTimeline(viewDate,form){
 /* ───── 탭 전환 ───── */
 function switchTab(tab){
   S.tab=tab;S.successMsg='';
-  ['reserve','schedule','dashboard','fleet','report'].forEach(t=>{
-    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  ['reserve','schedule','dashboard','fleet','report','admin'].forEach(t=>{
+    const el=document.getElementById('nav-'+t);
+    if(el) el.classList.toggle('active',t===tab);
   });
   render();window.scrollTo(0,0);
 }
 function render(){
   document.getElementById('content').innerHTML=({
     reserve:renderReserve,schedule:renderSchedule,
-    dashboard:renderDashboard,fleet:renderFleet,report:renderReport
+    dashboard:renderDashboard,fleet:renderFleet,
+    report:renderReport,admin:renderAdmin
   }[S.tab]||renderReserve)();
 }
 
@@ -671,7 +674,134 @@ function renderReport(){
     <div class="card">
       <div class="card-title">차량별 이용 현황</div>
       ${VEHICLES.map(v=>{const cnt=S.reservations.filter(r=>r.vehicleId===v.id&&r.status==='confirmed').length;return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:22px">${v.icon}</div><div style="flex:1"><div style="font-weight:600">${v.name}</div><div style="font-size:12px;color:var(--text2)">${v.number}</div></div><div style="font-size:18px;font-weight:700;color:var(--green)">${cnt}건</div></div>`;}).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">📥 엑셀 다운로드</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">예약 현황과 정비 기록을 엑셀 파일로 다운로드합니다</div>
+      <button class="btn btn-primary" style="margin-bottom:10px" onclick="exportExcel('reservations')">📋 예약 현황 다운로드</button>
+      <button class="btn" style="background:var(--blue-light);color:var(--blue);border:1.5px solid #93C5FD" onclick="exportExcel('maintenance')">🔧 정비 기록 다운로드</button>
+      <button class="btn" style="background:var(--green-light);color:var(--green-dark);border:1.5px solid #5DCAA5;margin-top:10px" onclick="exportExcel('all')">📦 전체 데이터 다운로드</button>
     </div>`;
+}
+
+/* ───── 엑셀 다운로드 ───── */
+function exportExcel(type){
+  // CSV 방식으로 다운로드 (별도 라이브러리 불필요)
+  function downloadCSV(filename, rows){
+    const BOM = '\uFEFF';
+    const csv = BOM + rows.map(r=>r.map(c=>'"'+(String(c||'').replace(/"/g,'""'))+'"').join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const today = todayStr();
+
+  if(type==='reservations'||type==='all'){
+    const header=['차량명','차량번호','이름','부서','출발일','출발시간','반납일','반납시간','목적지','목적','비고','상태'];
+    const rows=[header,...S.reservations.map(r=>{
+      const v=getV(r.vehicleId);
+      const dur=calcDuration(r.startDate,r.startTime,r.endDate,r.endTime);
+      return[v?.name||'',v?.number||'',r.user,r.dept,r.startDate,r.startTime,r.endDate,r.endTime,r.destination,r.purpose,r.note||'',r.endDate<today?'완료':'예정'];
+    })];
+    downloadCSV(`플리츠미_예약현황_${today}.csv`, rows);
+  }
+
+  if(type==='maintenance'||type==='all'){
+    setTimeout(()=>{
+      const header=['차량명','차량번호','날짜','유형','내용','정비소','비용(원)','주행거리(km)'];
+      const rows=[header,...S.maintenance.map(m=>{
+        const v=getV(m.vehicleId);
+        return[v?.name||'',v?.number||'',m.date,m.type,m.description,m.shop,m.cost,m.mileage];
+      })];
+      downloadCSV(`플리츠미_정비기록_${today}.csv`, rows);
+    }, type==='all'?500:0);
+  }
+}
+
+/* ───── 관리자 ───── */
+const ADMIN_PW = '0000';
+
+function goAdmin(){
+  if(S.adminUnlocked){
+    switchTab('admin');
+    return;
+  }
+  const pw=prompt('관리자 비밀번호를 입력하세요');
+  if(pw===null)return;
+  if(pw===ADMIN_PW){
+    S.adminUnlocked=true;
+    switchTab('admin');
+  } else {
+    alert('비밀번호가 틀렸습니다');
+  }
+}
+
+function renderAdmin(){
+  const allRes=[...S.reservations].sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  const today=todayStr();
+  return`
+    <div class="card" style="border:2px solid var(--orange);background:var(--orange-light)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#854F0B">🔐 관리자 모드</div>
+          <div style="font-size:12px;color:#854F0B;margin-top:2px">모든 예약을 수정·삭제할 수 있습니다</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--orange-light);color:#854F0B;border:1.5px solid #F59E0B;width:auto" onclick="S.adminUnlocked=false;switchTab('reserve')">잠금</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0">전체 예약 관리 (${allRes.length}건)</div>
+      </div>
+      ${allRes.length===0?'<div class="empty">예약 없음</div>':allRes.map(r=>{
+        const v=getV(r.vehicleId);
+        const isOld=r.endDate<today;
+        return`<div class="res-item" style="${isOld?'opacity:0.6':''}border-left:3px solid ${isOld?'var(--text3)':'var(--green)'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="flex:1">
+              <div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div>
+              <div class="res-meta">${r.user} (${r.dept}) · ${r.startDate} ${r.startTime} ~ ${r.endDate} ${r.endTime}</div>
+              <div class="res-meta">📍 ${r.purpose}${r.note?' · '+r.note:''}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+              <button class="btn btn-sm" style="background:var(--blue-light);color:var(--blue);border:1.5px solid #93C5FD;width:auto" onclick="editRes('${r.id}')">수정</button>
+              <button class="btn btn-sm btn-red" onclick="adminDeleteRes('${r.id}')">삭제</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-title">정비 기록 관리 (${S.maintenance.length}건)</div>
+      ${S.maintenance.length===0?'<div class="empty">정비 기록 없음</div>':
+        [...S.maintenance].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>{
+          const v=getV(m.vehicleId);
+          return`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-weight:600;font-size:13px">${v?.icon} ${v?.name} · <span class="badge badge-blue">${m.type}</span></div>
+              <div style="font-size:12px;color:var(--text2)">${m.date} · ${m.shop} · ${m.cost}원 · ${m.mileage}km</div>
+              <div style="font-size:12px">${m.description}</div>
+            </div>
+            <button class="btn btn-sm btn-red" style="flex-shrink:0" onclick="adminDeleteMaint('${m.id}')">삭제</button>
+          </div>`;
+        }).join('')}
+    </div>`;
+}
+
+function adminDeleteRes(id){
+  if(!confirm('이 예약을 삭제하시겠습니까?\n(복구 불가)'))return;
+  fbDeleteRes(id);
+}
+function adminDeleteMaint(id){
+  if(!confirm('이 정비 기록을 삭제하시겠습니까?\n(복구 불가)'))return;
+  S.maintenance=S.maintenance.filter(m=>m.id!==id);
+  if(db){db.ref('maintenance/'+id).remove();}
+  render();
 }
 
 /* ───── 액션 ───── */
