@@ -20,6 +20,7 @@
   --outing:#6B7280;--outing-bg:#F3F4F6;--outing-t:#374151;
   --early:#EC4899;--early-bg:#FDF2F8;--early-t:#831843;
   --direct-out:#0EA5E9;--direct-out-bg:#F0F9FF;--direct-out-t:#0369A1;
+  --biz:#7C3AED;--biz-bg:#F5F3FF;--biz-t:#5B21B6;
   --out-color:#D97706;--out-bg:#FFFBEB;
   --done-color:#059669;--done-bg:#ECFDF5;
   --direct-color:#7C3AED;--direct-bg:#EDE9FE;
@@ -64,6 +65,7 @@ input,select,textarea{font-family:inherit}
 .badge-outing{background:var(--outing-bg);color:var(--outing-t)}
 .badge-early_leave{background:var(--early-bg);color:var(--early-t)}
 .badge-direct_out{background:var(--direct-out-bg);color:var(--direct-out-t)}
+.badge-biz_trip{background:var(--biz-bg);color:var(--biz-t)}
 .badge-out{background:var(--out-bg);color:var(--out-color)}
 .badge-done{background:var(--done-bg);color:var(--done-color)}
 .badge-direct{background:var(--direct-bg);color:var(--direct-color)}
@@ -85,6 +87,7 @@ input,select,textarea{font-family:inherit}
 .rec-card.outing{border-left-color:var(--outing)}
 .rec-card.early_leave{border-left-color:var(--early)}
 .rec-card.direct_out{border-left-color:var(--direct-out)}
+.rec-card.biz_trip{border-left-color:var(--biz)}
 .rec-card.past{opacity:.55}
 .rec-card.active-out{background:linear-gradient(135deg,#FFFBEB 0%,#FFF 60%);border-left-color:var(--out-color)}
 .rec-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -112,6 +115,7 @@ input,select,textarea{font-family:inherit}
 .cat-btn.selected-outing{border-color:var(--outing);background:var(--outing-bg);color:var(--outing-t)}
 .cat-btn.selected-early_leave{border-color:var(--early);background:var(--early-bg);color:var(--early-t)}
 .cat-btn.selected-direct_out{border-color:var(--direct-out);background:var(--direct-out-bg);color:var(--direct-out-t)}
+.cat-btn.selected-biz_trip{border-color:var(--biz);background:var(--biz-bg);color:var(--biz-t)}
 .emp-list{max-height:200px;overflow-y:auto;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff}
 .emp-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
 .emp-item:last-child{border-bottom:none}
@@ -267,11 +271,12 @@ const ADMIN_PIN = "0000"; // ← 관리자 PIN
 
 // ── 카테고리 정의 ──────────────────────────────────
 const CATS = {
-  vacation:     { label:'휴가', icon:'🏖', color:'var(--vacation)', bg:'var(--vacation-bg)' },
-  half_day:     { label:'반차', icon:'🌓', color:'var(--half)',     bg:'var(--half-bg)'     },
-  outing:       { label:'외출', icon:'🚗', color:'var(--outing)',   bg:'var(--outing-bg)'   },
-  early_leave:  { label:'조퇴', icon:'🏠', color:'var(--early)',    bg:'var(--early-bg)'    },
-  direct_out:   { label:'직출', icon:'📍', color:'var(--direct-out)', bg:'var(--direct-out-bg)' },
+  outing:      { label:'외출', icon:'🚗', color:'var(--outing)',     bg:'var(--outing-bg)'     },
+  direct_out:  { label:'직출', icon:'📍', color:'var(--direct-out)', bg:'var(--direct-out-bg)' },
+  biz_trip:    { label:'출장', icon:'✈️', color:'var(--biz)',        bg:'var(--biz-bg)'        },
+  vacation:    { label:'휴가', icon:'🏖', color:'var(--vacation)',   bg:'var(--vacation-bg)'   },
+  half_day:    { label:'반차', icon:'🌓', color:'var(--half)',       bg:'var(--half-bg)'       },
+  early_leave: { label:'조퇴', icon:'🏠', color:'var(--early)',      bg:'var(--early-bg)'      },
 };
 
 // ── BU 초기 데이터 ─────────────────────────────────
@@ -1204,6 +1209,12 @@ function renderDynamicFields(cat, r=null){
   } else if(cat==='early_leave'){
     html=timePickerHTML('f-start', r?.startAt, '조퇴 시간', true)+`
       <div class="form-group"><label class="form-label">사유 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
+  } else if(cat==='biz_trip'){
+    html=timePickerHTML('f-start', r?.startAt, '출발 시간', true)+
+         timePickerHTML('f-return', r?.expectedReturnAt, '귀사/복귀 예정', false)+`
+      <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
+      <div class="form-group"><label class="form-label">출장지 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-place" placeholder="예: 부산, 대구, 일본 도쿄" value="${r?.place||''}"></div>
+      <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 방문, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else if(cat==='direct_out'){
     html=timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정 시간', false)+`
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
@@ -1275,6 +1286,16 @@ function submitForm(){
     if(!startAt){ showFormError('조퇴 시간을 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('사유를 입력해주세요'); return; }
+
+  } else if(cat === 'biz_trip'){
+    startAt = readTimePicker('f-start');
+    if(!startAt){ showFormError('출발 시간을 입력해주세요'); return; }
+    place = (document.getElementById('f-place')?.value || '').trim();
+    if(!place){ showFormError('출장지를 입력해주세요'); return; }
+    purpose = (document.getElementById('f-purpose')?.value || '').trim();
+    if(!purpose){ showFormError('목적을 입력해주세요'); return; }
+    expectedReturnAt = readTimePicker('f-return');
+    isDirectLeave = document.getElementById('f-direct')?.checked || false;
 
   } else if(cat === 'direct_out'){
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
