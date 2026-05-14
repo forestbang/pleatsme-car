@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>플리츠미 외출기록</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="외출기록">
-<meta name="theme-color" content="#1B3A6B">
+<meta name="theme-color" content="#6558B1">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjOEI3RkQ0Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzY1NThCMSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPCEtLSDrsLDqsr0gLS0+CiAgPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHJ4PSI0NCIgZmlsbD0idXJsKCNiZykiLz4KICA8IS0tIOychOy5mO2VgCAtLT4KICA8ZWxsaXBzZSBjeD0iODAiIGN5PSIxMzgiIHJ4PSIxOCIgcnk9IjYiIGZpbGw9InJnYmEoMCwwLDAsMC4yKSIvPgogIDxwYXRoIGQ9Ik04MCA1MCBDNTggNTAgNDIgNjYgNDIgODYgQzQyIDExMiA4MCAxMzggODAgMTM4IEM4MCAxMzggMTE4IDExMiAxMTggODYgQzExOCA2NiAxMDIgNTAgODAgNTBaIiBmaWxsPSJ3aGl0ZSIvPgogIDxjaXJjbGUgY3g9IjgwIiBjeT0iODYiIHI9IjE2IiBmaWxsPSIjNjU1OEIxIi8+CiAgPCEtLSDsi5zqs4QgLS0+CiAgPGNpcmNsZSBjeD0iMTM4IiBjeT0iNzIiIHI9IjI2IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45NSIvPgogIDxjaXJjbGUgY3g9IjEzOCIgY3k9IjcyIiByPSIyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNjU1OEIxIiBzdHJva2Utd2lkdGg9IjMiLz4KICA8bGluZSB4MT0iMTM4IiB5MT0iNzIiIHgyPSIxMzgiIHkyPSI1OCIgc3Ryb2tlPSIjNjU1OEIxIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxsaW5lIHgxPSIxMzgiIHkxPSI3MiIgeDI9IjE0OCIgeTI9Ijc4IiBzdHJva2U9IiM2NTU4QjEiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPCEtLSDssrTtgaztkZzsi5wgLS0+CiAgPGNpcmNsZSBjeD0iMTM4IiBjeT0iMTQ1IiByPSIyNiIgZmlsbD0iI0ZGRDcwMCIvPgogIDxwb2x5bGluZSBwb2ludHM9IjEyNiwxNDUgMTM0LDE1NCAxNTIsMTM0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NTU4QjEiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPg==">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -357,25 +359,9 @@ let S = {
 };
 
 // ═══════════════════════════════════════════
-// FIREBASE 초기화
 // ═══════════════════════════════════════════
-function initFirebase(){
-  try{
-    if(FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') throw new Error('config');
-    firebase.initializeApp(FIREBASE_CONFIG);
-    S.db = firebase.database();
-    S.fbOk = true;
-    const ref = S.db.ref('outing');
-    ref.child('bus').once('value', snap=>{
-      if(!snap.val()) initDefaultData();
-      else loadFromFirebase();
-    });
-  } catch(e){
-    console.warn('Firebase 미설정, 로컬 데이터 사용');
-    loadLocalData();
-    renderApp();
-  }
-}
+// Firebase 초기화 (DOMContentLoaded에서 처리)
+// ═══════════════════════════════════════════
 
 function initDefaultData(){
   const bus={}, emp={};
@@ -384,25 +370,7 @@ function initDefaultData(){
   S.db.ref('outing/bus').set(bus);
   S.db.ref('outing/employees').set(emp);
   S.bus = bus; S.employees = emp; S.records = {};
-  saveLocal(); renderApp();
-  subscribeFirebase();
-}
-
-function loadFromFirebase(){
-  S.db.ref('outing').on('value', snap=>{
-    const d = snap.val()||{};
-    S.bus = d.bus||{}; S.employees = d.employees||{}; S.records = d.records||{};
-    saveLocal(); renderApp();
-  });
-}
-
-function subscribeFirebase(){
-  if(!S.fbOk) return;
-  S.db.ref('outing').on('value', snap=>{
-    const d = snap.val()||{};
-    S.bus = d.bus||{}; S.employees = d.employees||{}; S.records = d.records||{};
-    saveLocal(); renderApp();
-  });
+  saveLocal();
 }
 
 // ── 로컬 스토리지 ────────────────────────────────
