@@ -1020,6 +1020,7 @@ function renderAdmin(){
           ?`<button class="btn-sm btn-warn" onclick="toggleEmp('${e.id}',false)">비활성</button>`
           :`<button class="btn-sm btn-restore" onclick="toggleEmp('${e.id}',true)">복원</button>`
         }
+        <button class="btn-sm btn-warn" onclick="deleteEmp('${e.id}','${e.name}')">삭제</button>
       </div>
     </div>`;
   }).join('');
@@ -1109,6 +1110,12 @@ function adminLogout(){ S.isAdmin=false; renderAdmin(); }
 function toggleEmp(id,active){
   const e=S.employees[id]; if(!e) return;
   e.active=active; saveEmployee(e); showToast(active?'복원되었습니다':'비활성화되었습니다');
+}
+function deleteEmp(id, name){
+  if(!confirm(`${name} 직원을 완전히 삭제할까요?\n삭제 후에는 복구할 수 없습니다.`)) return;
+  if(S.fbOk){ S.db.ref('outing/employees/'+id).remove(); }
+  else{ delete S.employees[id]; saveLocal(); renderAdmin(); }
+  showToast(`${name} 직원이 삭제되었습니다`);
 }
 
 // ═══════════════════════════════════════════
