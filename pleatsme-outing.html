@@ -446,12 +446,15 @@ function dateInputDefault(){
 function calcStatus(r){
   const now = kstNow().getTime();
   if(r.category==='vacation'){
+    if(r.startAt > now) return 'sched';
     return r.endAt && kstOf(r.endAt).setHours(23,59,59,999) < now ? 'done' : 'vacation';
   }
   if(r.category==='half_day'){
+    if(r.startAt > now) return 'sched';
     return r.startAt && r.startAt < now ? 'done' : 'half_day';
   }
   if(r.category==='early_leave'){
+    if(r.startAt > now) return 'sched';
     return r.startAt && r.startAt < now ? 'early_done' : 'early_sched';
   }
   // 외출
@@ -494,7 +497,7 @@ function buSorted(){ return Object.values(S.bus).filter(b=>b.active).sort((a,b)=
 function empsByBu(buId){ return activeEmps().filter(e=>e.buId===buId); }
 
 // 직급 순서 (낮을수록 높은 직급)
-const POS_RANK = {'부회장':0,'사장':1,'이사':2,'부장':3,'차장':4,'과장':5,'대리':6,'선임':7,'전임':8,'사원':9};
+const POS_RANK = {'회장':-1,'부회장':0,'사장':1,'이사':2,'부장':3,'차장':4,'과장':5,'대리':6,'선임':7,'전임':8,'사원':9};
 function sortEmps(emps){
   return [...emps].sort((a,b)=>{
     const ra = POS_RANK[a.position]??99;
@@ -606,9 +609,9 @@ function renderDashboard(){
     return s.getTime()===today.getTime();
   });
   const outNow=recs.filter(r=>isActiveOut(r));
-  const vacToday=todayRecs.filter(r=>r.category==='vacation');
-  const halfToday=todayRecs.filter(r=>r.category==='half_day');
-  const earlyToday=todayRecs.filter(r=>r.category==='early_leave');
+  const vacToday=todayRecs.filter(r=>r.category==='vacation' && r.startAt<=kstNow().getTime());
+  const halfToday=todayRecs.filter(r=>r.category==='half_day' && r.startAt<=kstNow().getTime());
+  const earlyToday=todayRecs.filter(r=>r.category==='early_leave' && r.startAt<=kstNow().getTime());
   const directOutToday=todayRecs.filter(r=>r.category==='direct_out');
   const outingToday=todayRecs.filter(r=>r.category==='outing');
   const countOut = outNow.reduce((sum, r) => sum + (r.participantIds?.length || 1), 0);
