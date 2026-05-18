@@ -147,7 +147,7 @@ input,select,textarea{font-family:inherit}
 .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;position:relative;transition:.15s}
 .cal-day:hover{background:var(--bg)}
 .cal-day.today{background:var(--navy);color:#fff}
-.cal-day.selected{background:var(--navy2);color:#fff}
+.cal-day.selected{background:#6558B1;color:#fff;box-shadow:0 2px 8px rgba(101,88,177,0.4)}
 .cal-day.other-month{opacity:.35}
 .cal-day .day-num{font-size:13px;font-weight:600;line-height:1}
 .cal-dots{display:flex;gap:2px;margin-top:2px;justify-content:center;flex-wrap:wrap}
@@ -690,7 +690,8 @@ function buildRecCard(r, isActive=false, isPastCard=false){
   const writer=getEmp(r.writerId);
   const bu=getBU(r.buId);
   const isMe=r.writerId===S.currentUser || (r.participantIds||[]).includes(S.currentUser);
-  const canEdit=S.isAdmin||(r.writerId===S.currentUser);
+  const canEdit=S.isAdmin||r.writerId===S.currentUser;
+  const canReturn=S.isAdmin||isMe;
 
   let timeHtml='';
   if(r.category==='outing'){
@@ -716,10 +717,10 @@ function buildRecCard(r, isActive=false, isPastCard=false){
   if(r.isPostEntry) badges+=`<span class="badge badge-post">사후기재</span>`;
 
   let actions='';
-  if(canEdit||S.isAdmin){
+  if(canEdit||canReturn){
     actions+=`<div class="rec-actions">`;
-    if(status==='out') actions+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
-    actions+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="edit">✏️ 수정</button>`;
+    if(status==='out' && canReturn) actions+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
+    if(canEdit) actions+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="edit">✏️ 수정</button>`;
     if(S.isAdmin) actions+=`<button class="rec-actions-btn btn-delete" data-id="${r.id}" data-action="delete">🗑 삭제</button>`;
     actions+=`</div>`;
   }
@@ -1112,6 +1113,7 @@ function renderAdminRecs(){
           ${r.purpose ? `<div style="font-size:12px;color:var(--text2);margin-top:2px">📝 ${r.purpose}</div>` : ''}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
+          ${r.category==='outing' && calcStatus(r)==='out' ? `<button class="btn-sm btn-return" onclick="handleReturn('${r.id}')">✅ 귀사</button>` : ''}
           <button class="btn-sm btn-edit" onclick="openForm('${r.id}')">✏️ 수정</button>
           <button class="btn-sm btn-warn" onclick="adminDeleteRec('${r.id}')">🗑 삭제</button>
         </div>
