@@ -605,13 +605,34 @@ function renderDashboard(){
   const tomorrow=new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
   const recs=Object.values(S.records);
   const todayRecs=recs.filter(r=>{
+    if(r.category==='vacation'){
+      const startDay=kstOf(r.startAt); startDay.setHours(0,0,0,0);
+      const endDay=r.endAt?kstOf(r.endAt):kstOf(r.startAt); endDay.setHours(23,59,59,999);
+      return startDay.getTime()<=today.getTime() && endDay.getTime()>=today.getTime();
+    }
     const s=kstOf(r.startAt); s.setHours(0,0,0,0);
     return s.getTime()===today.getTime();
   });
   const outNow=recs.filter(r=>isActiveOut(r));
-  const vacToday=todayRecs.filter(r=>r.category==='vacation' && r.startAt<=kstNow().getTime());
-  const halfToday=todayRecs.filter(r=>r.category==='half_day' && r.startAt<=kstNow().getTime());
-  const earlyToday=todayRecs.filter(r=>r.category==='early_leave' && r.startAt<=kstNow().getTime());
+  const todayMs = today.getTime();
+  const tomorrowMs = tomorrow.getTime();
+  // 오늘 날짜에 걸쳐있는 휴가 (시작일<=오늘<=종료일 이고 시작일이 오늘 이전이거나 같은날)
+  const vacToday = recs.filter(r => {
+    if(r.category !== 'vacation') return false;
+    const startDay = kstOf(r.startAt); startDay.setHours(0,0,0,0);
+    const endDay = r.endAt ? kstOf(r.endAt) : kstOf(r.startAt); endDay.setHours(23,59,59,999);
+    return startDay.getTime() <= todayMs && endDay.getTime() >= todayMs && r.startAt <= kstNow().getTime();
+  });
+  const halfToday = recs.filter(r => {
+    if(r.category !== 'half_day') return false;
+    const startDay = kstOf(r.startAt); startDay.setHours(0,0,0,0);
+    return startDay.getTime() === todayMs && r.startAt <= kstNow().getTime();
+  });
+  const earlyToday = recs.filter(r => {
+    if(r.category !== 'early_leave') return false;
+    const startDay = kstOf(r.startAt); startDay.setHours(0,0,0,0);
+    return startDay.getTime() === todayMs && r.startAt <= kstNow().getTime();
+  });
   const directOutToday=todayRecs.filter(r=>r.category==='direct_out');
   const outingToday=todayRecs.filter(r=>r.category==='outing');
   const countOut = outNow.reduce((sum, r) => sum + (r.participantIds?.length || 1), 0);
