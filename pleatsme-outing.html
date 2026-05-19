@@ -719,8 +719,8 @@ function buildRecCard(r, isActive=false, isPastCard=false){
   const hasAnyBtn = status==='out' || status==='returned' || canEdit || S.isAdmin;
   if(hasAnyBtn){
     let btnHtml='';
-    if(status==='out') btnHtml+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
-    if(status==='returned' && canEdit) btnHtml+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="undo" style="background:#EDE9FE;color:#5B21B6">↩ 되돌리기</button>`;
+    if(status==='out' && canEdit) btnHtml+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
+    if(status==='returned' && r.category==='outing' && canEdit) btnHtml+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="undo" style="background:#EDE9FE;color:#5B21B6">↩ 되돌리기</button>`;
     if(canEdit) btnHtml+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="edit">✏️ 수정</button>`;
     if(S.isAdmin) btnHtml+=`<button class="rec-actions-btn btn-delete" data-id="${r.id}" data-action="delete">🗑 삭제</button>`;
     if(btnHtml) actions=`<div class="rec-actions">${btnHtml}</div>`;
