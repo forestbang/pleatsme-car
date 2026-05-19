@@ -716,12 +716,14 @@ function buildRecCard(r, isActive=false, isPastCard=false){
   if(r.isPostEntry) badges+=`<span class="badge badge-post">사후기재</span>`;
 
   let actions='';
-  if(status==='out' || canEdit || S.isAdmin){
-    actions+=`<div class="rec-actions">`;
-    if(status==='out') actions+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
-    if(canEdit) actions+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="edit">✏️ 수정</button>`;
-    if(S.isAdmin) actions+=`<button class="rec-actions-btn btn-delete" data-id="${r.id}" data-action="delete">🗑 삭제</button>`;
-    actions+=`</div>`;
+  const hasAnyBtn = status==='out' || status==='returned' || canEdit || S.isAdmin;
+  if(hasAnyBtn){
+    let btnHtml='';
+    if(status==='out') btnHtml+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
+    if(status==='returned' && canEdit) btnHtml+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="undo" style="background:#EDE9FE;color:#5B21B6">↩ 되돌리기</button>`;
+    if(canEdit) btnHtml+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="edit">✏️ 수정</button>`;
+    if(S.isAdmin) btnHtml+=`<button class="rec-actions-btn btn-delete" data-id="${r.id}" data-action="delete">🗑 삭제</button>`;
+    if(btnHtml) actions=`<div class="rec-actions">${btnHtml}</div>`;
   }
 
   const cardClass=`rec-card ${r.category}${isActive?' active-out':''}${isPastCard?' past':''}`;
@@ -739,6 +741,7 @@ function attachRecActions(){
       e.stopPropagation();
       const id=btn.dataset.id, action=btn.dataset.action;
       if(action==='return') handleReturn(id);
+      else if(action==='undo') handleUndo(id);
       else if(action==='edit') openForm(id);
       else if(action==='delete') handleDelete(id);
     });
@@ -748,6 +751,12 @@ function handleReturn(id){
   const r=S.records[id]; if(!r) return;
   r.actualReturnAt=Date.now(); r.updatedAt=Date.now();
   saveRecord(r); showToast('귀사 처리되었습니다');
+}
+function handleUndo(id){
+  const r=S.records[id]; if(!r) return;
+  if(!confirm('귀사처리를 취소하고 외출중으로 되돌릴까요?')) return;
+  r.actualReturnAt=null; r.updatedAt=Date.now();
+  saveRecord(r); showToast('외출중으로 되돌렸습니다');
 }
 function handleDelete(id){
   if(!confirm('이 기록을 삭제할까요?')) return;
@@ -1113,12 +1122,20 @@ function renderAdminRecs(){
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           ${r.category==='outing' && calcStatus(r)==='out' ? `<button class="btn-sm btn-return" onclick="handleReturn('${r.id}')">✅ 귀사</button>` : ''}
+          ${r.category==='outing' && (calcStatus(r)==='returned') ? `<button class="btn-sm btn-restore" onclick="undoReturn('${r.id}')">↩ 되돌리기</button>` : ''}
           <button class="btn-sm btn-edit" onclick="openForm('${r.id}')">✏️ 수정</button>
           <button class="btn-sm btn-warn" onclick="adminDeleteRec('${r.id}')">🗑 삭제</button>
         </div>
       </div>
     </div>`;
   }).join('');
+}
+function undoReturn(id){
+  const r=S.records[id]; if(!r) return;
+  if(!confirm('완료를 취소하고 외출중으로 되돌릴까요?')) return;
+  r.actualReturnAt=null; r.updatedAt=Date.now();
+  saveRecord(r); showToast('외출중으로 되돌렸습니다');
+  setTimeout(()=>renderAdminRecs(), 300);
 }
 function adminDeleteRec(id){
   if(!confirm('이 기록을 삭제할까요?')) return;
