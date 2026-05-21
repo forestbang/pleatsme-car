@@ -451,7 +451,8 @@ function calcStatus(r){
   }
   if(r.category==='half_day'){
     if(r.startAt > now) return 'sched';
-    return r.startAt && r.startAt < now ? 'done' : 'half_day';
+    if(r.endAt && r.endAt > now) return 'half_day';
+    return 'done';
   }
   if(r.category==='early_leave'){
     if(r.startAt > now) return 'sched';
@@ -1367,8 +1368,8 @@ function submitForm(){
     if(!sd){ showFormError('날짜를 입력해주세요'); return; }
     purpose = document.getElementById('f-purpose')?.value || '';
     halfPeriod = document.querySelector('input[name="half-period"]:checked')?.value || 'am';
-    startAt = parseLocalDT(sd+'T'+(halfPeriod==='am'?'09:00':'13:30'));
-    endAt = parseLocalDT(sd+'T'+(halfPeriod==='am'?'13:00':'18:00'));
+    startAt = parseLocalDT(sd+'T'+(halfPeriod==='am'?'09:00':'14:00'));
+    endAt = parseLocalDT(sd+'T'+(halfPeriod==='am'?'14:00':'18:00'));
 
   } else if(cat === 'early_leave'){
     startAt = readTimePicker('f-start');
