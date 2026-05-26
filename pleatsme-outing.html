@@ -458,7 +458,14 @@ function calcStatus(r){
     if(r.startAt > now) return 'sched';
     return r.startAt && r.startAt < now ? 'early_done' : 'early_sched';
   }
-  // 외출
+  if(r.category==='direct_out'){
+    if(r.actualReturnAt) return 'returned';
+    if(r.isDirectLeave) return 'direct';
+    if(!r.startAt || r.startAt > now) return 'sched';
+    if(r.expectedReturnAt && r.expectedReturnAt < now) return 'returned';
+    return 'out';
+  }
+  // 외출/출장
   if(r.actualReturnAt) return 'returned';
   if(r.isDirectLeave) return r.startAt < now ? 'direct' : 'sched';
   if(!r.startAt) return 'sched';
@@ -487,7 +494,8 @@ function isPast(r){
   return ['returned','done'].includes(s);
 }
 function isActiveOut(r){
-  return calcStatus(r)==='out';
+  const s = calcStatus(r);
+  return s==='out' || (r.category==='direct_out' && s==='direct');
 }
 
 // ── 직원/BU 조회 ──────────────────────────────────
