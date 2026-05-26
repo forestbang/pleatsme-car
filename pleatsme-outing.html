@@ -460,6 +460,10 @@ function calcStatus(r){
   }
   if(r.category==='direct_out'){
     if(r.actualReturnAt) return 'returned';
+    // 당일이 지나면 자동 완료
+    const startDay = kstOf(r.startAt); startDay.setHours(0,0,0,0);
+    const todayDay = todayKST();
+    if(startDay.getTime() < todayDay.getTime()) return 'returned';
     if(r.isDirectLeave) return 'direct';
     if(!r.startAt || r.startAt > now) return 'sched';
     if(r.expectedReturnAt && r.expectedReturnAt < now) return 'returned';
@@ -467,9 +471,12 @@ function calcStatus(r){
   }
   // 외출/출장
   if(r.actualReturnAt) return 'returned';
-  if(r.isDirectLeave) return r.startAt < now ? 'direct' : 'sched';
   if(!r.startAt) return 'sched';
   if(r.startAt > now) return 'sched';
+  // 당일이 지나면 자동 완료
+  const startDay2 = kstOf(r.startAt); startDay2.setHours(0,0,0,0);
+  if(startDay2.getTime() < todayKST().getTime()) return 'returned';
+  if(r.isDirectLeave) return r.startAt < now ? 'direct' : 'sched';
   if(r.expectedReturnAt && r.expectedReturnAt < now) return 'returned';
   return 'out';
 }
