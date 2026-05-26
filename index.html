@@ -347,6 +347,13 @@ function fbSaveMaint(m){
 function todayStr(){
   return new Date().toLocaleDateString('sv-SE', {timeZone:'Asia/Seoul'});
 }
+function toAmPm(t){
+  if(!t)return t;
+  const [h,m]=t.split(':').map(Number);
+  const ampm=h<12?'AM':'PM';
+  const h12=h===0?12:h>12?h-12:h;
+  return`${ampm} ${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
 function getV(id){return VEHICLES.find(v=>v.id===id);}
 function korDate(d){return new Date(d+'T12:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});}
 function addDays(d,n){const dt=new Date(d+'T12:00:00');dt.setDate(dt.getDate()+n);return dt.toISOString().split('T')[0];}
@@ -490,7 +497,7 @@ function renderReserve(){
           <div class="fgroup"><label>날짜</label><input type="date" value="${f.startDate}" min="${todayStr()}" onchange="SF('startDate',this.value);S.tlDate=this.value;if(S.form.endDate<this.value)SF('endDate',this.value);render()"></div>
           <div class="fgroup"><label>시간</label><select onchange="SF('startTime',this.value);render()" style="font-size:16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
             <option value="">선택</option>
-            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;return`<option value="${t}" ${f.startTime===t?'selected':''}>${t}</option>`;}).join('')).join('')}
+            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;const ampm=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;const label=`${ampm} ${String(h12).padStart(2,'0')}:${m}`;return`<option value="${t}" ${f.startTime===t?'selected':''}>${label}</option>`;}).join('')).join('')}
           </select></div>
         </div>
       </div>
@@ -501,7 +508,7 @@ function renderReserve(){
           <div class="fgroup"><label>날짜</label><input type="date" value="${f.endDate}" min="${f.startDate||todayStr()}" onchange="SF('endDate',this.value);render()"></div>
           <div class="fgroup"><label>시간</label><select onchange="SF('endTime',this.value);render()" style="font-size:16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
             <option value="">선택</option>
-            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;return`<option value="${t}" ${f.endTime===t?'selected':''}>${t}</option>`;}).join('')).join('')}
+            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;const ampm=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;const label=`${ampm} ${String(h12).padStart(2,'0')}:${m}`;return`<option value="${t}" ${f.endTime===t?'selected':''}>${label}</option>`;}).join('')).join('')}
           </select></div>
         </div>
       </div>
@@ -549,7 +556,7 @@ function renderSchedule(){
           <div style="flex:1">
             <div class="res-vehicle"><span style="color:${v?.color}">${v?.icon}</span> ${v?.name} → ${r.destination}${isMultiDay(r)?'<span class="badge badge-purple" style="margin-left:4px;font-size:10px">다박</span>':''}</div>
             <div class="res-meta">${r.user} · <strong style="color:var(--text)">${r.dept}</strong>${r.note?` · ${r.note}`:''}</div>
-            <div class="res-time">🚀 ${korDate(r.startDate)} <strong>${r.startTime}</strong> → 🏁 ${r.startDate!==r.endDate?korDate(r.endDate)+' ':''}<strong>${r.endTime}</strong>${dur?` <span class="badge badge-purple">${dur}</span>`:''}</div>
+            <div class="res-time">🚀 ${korDate(r.startDate)} <strong>${toAmPm(r.startTime)}</strong> → 🏁 ${r.startDate!==r.endDate?korDate(r.endDate)+' ':''}<strong>${toAmPm(r.endTime)}</strong>${dur?` <span class="badge badge-purple">${dur}</span>`:''}</div>
             ${r.purpose?`<div class="res-meta">📍 ${r.purpose}</div>`:''}
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
@@ -567,7 +574,7 @@ function renderSchedule(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div>
             <div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div>
-            <div class="res-meta">${r.user} (${r.dept}) · ${r.startDate} ${r.startTime}~${r.endTime}</div>
+            <div class="res-meta">${r.user} (${r.dept}) · ${r.startDate} ${toAmPm(r.startTime)}~${toAmPm(r.endTime)}</div>
             ${r.purpose?`<div class="res-meta">📍 ${r.purpose}</div>`:''}
           </div>
           <span class="badge" style="background:#F0F0F0;color:#888;flex-shrink:0">완료</span>
@@ -592,7 +599,7 @@ function renderDashboard(){
     <div class="card"><div class="section-lbl">오늘 차량 현황</div>${buildTimeline(t,{})}</div>
     <div class="card">
       <div class="card-title">오늘 운행 일정</div>
-      ${todayRes.length===0?'<div class="empty">오늘 예약 없음</div>':todayRes.map(r=>{const v=getV(r.vehicleId);return`<div style="padding:8px 0;border-bottom:1px solid var(--border)"><div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div><div class="res-meta">${r.user} (${r.dept}) · ${r.startTime}~${r.endTime}</div></div>`;}).join('')}
+      ${todayRes.length===0?'<div class="empty">오늘 예약 없음</div>':todayRes.map(r=>{const v=getV(r.vehicleId);return`<div style="padding:8px 0;border-bottom:1px solid var(--border)"><div class="res-vehicle">${v?.icon} ${v?.name} → ${r.destination}</div><div class="res-meta">${r.user} (${r.dept}) · ${toAmPm(r.startTime)}~${toAmPm(r.endTime)}</div></div>`;}).join('')}
     </div>
     <div class="card">
       <div class="card-title">부서별 사용 현황</div>
