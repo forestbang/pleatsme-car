@@ -729,6 +729,7 @@ function buildRecCard(r, isActive=false, isPastCard=false){
   let badges=`<span class="badge badge-${r.category}">${cat.label}</span>`;
   badges+=`<span class="${getStatusClass(status)}">${getStatusLabel(status)}</span>`;
   if(r.isDirectLeave) badges+=`<span class="badge badge-direct">직퇴</span>`;
+  if(r.isDirectOut) badges+=`<span class="badge badge-sched">직출</span>`;
   if(r.isPostEntry) badges+=`<span class="badge badge-post">사후기재</span>`;
 
   let actions='';
@@ -1315,9 +1316,17 @@ function renderDynamicFields(cat, r=null){
     html=timePickerHTML('f-start', r?.startAt, '조퇴 시간', true)+`
       <div class="form-group"><label class="form-label">사유 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 몸이 좋지 않아, 개인 사정" value="${r?.purpose||''}"></div>`;
   } else if(cat==='biz_trip'){
-    html=timePickerHTML('f-start', r?.startAt, '출발 시간', true)+
-         timePickerHTML('f-return', r?.expectedReturnAt, '귀사/복귀 예정', false)+`
-      <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
+    const startDateVal = r?.startAt ? kstOf(r.startAt).toISOString().slice(0,10) : dateInputDefault();
+    const endDateVal = r?.endAt ? kstOf(r.endAt).toISOString().slice(0,10) : dateInputDefault();
+    html=`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">출발일 <span style="color:#DC2626">*</span></label><input type="date" class="form-input" id="f-biz-start" value="${startDateVal}"></div>
+        <div class="form-group"><label class="form-label">복귀 예정일</label><input type="date" class="form-input" id="f-biz-end" value="${endDateVal}"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <label class="check-item"><input type="checkbox" id="f-biz-direct-out" ${r?.isDirectOut?'checked':''}><span class="check-label">📍 직출</span></label>
+        <label class="check-item"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">🏠 직퇴</span></label>
+      </div>
       <div class="form-group"><label class="form-label">출장지 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-place" placeholder="예: 부산, 대구, 일본 도쿄" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 방문, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else if(cat==='direct_out'){
@@ -1393,14 +1402,21 @@ function submitForm(){
     if(!purpose){ showFormError('사유를 입력해주세요'); return; }
 
   } else if(cat === 'biz_trip'){
-    startAt = readTimePicker('f-start');
-    if(!startAt){ showFormError('출발 시간을 입력해주세요'); return; }
+    const bizStart = document.getElementById('f-biz-start')?.value;
+    const bizEnd = document.getElementById('f-biz-end')?.value;
+    if(!bizStart){ showFormError('출발일을 입력해주세요'); return; }
     place = (document.getElementById('f-place')?.value || '').trim();
     if(!place){ showFormError('출장지를 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('목적을 입력해주세요'); return; }
-    expectedReturnAt = readTimePicker('f-return');
+    startAt = parseLocalDT(bizStart+'T09:00');
+    endAt = parseLocalDT((bizEnd||bizStart)+'T23:59');
     isDirectLeave = document.getElementById('f-direct')?.checked || false;
+    const isDirectOutVal = document.getElementById('f-biz-direct-out')?.checked || false;
+    // isDirectOut을 rec에 저장하기 위해 place 필드 활용 대신 별도 플래그 사용
+    place = (document.getElementById('f-place')?.value || '').trim();
+    // isDirectOut 플래그는 rec 생성 시 추가
+    if(isDirectOutVal) place = place; // placeholder, handled below
 
   } else if(cat === 'direct_out'){
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
@@ -1420,6 +1436,8 @@ function submitForm(){
     place = (document.getElementById('f-place')?.value || '').trim();
   }
 
+  const isDirectOut = cat==='biz_trip' ? (document.getElementById('f-biz-direct-out')?.checked||false) : false;
+
   const now = Date.now();
   const isPostEntry = startAt < now;
   const id = S.editingId || ('r_'+now+'_'+Math.random().toString(36).slice(2,7));
@@ -1429,7 +1447,7 @@ function submitForm(){
     id, category:cat, buId, writerId: writerId||checked[0],
     participantIds:checked, startAt, endAt, expectedReturnAt,
     actualReturnAt: existing?.actualReturnAt || null,
-    isDirectLeave, halfPeriod, place, purpose, memo,
+    isDirectLeave, isDirectOut, halfPeriod, place, purpose, memo,
     isPostEntry, createdAt: existing?.createdAt||now, updatedAt:now
   };
 
