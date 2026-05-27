@@ -1210,7 +1210,10 @@ function openForm(editId=null){
       </div>
       <div class="form-group">
         <label class="form-label">소속 BU</label>
-        <select class="form-input" id="f-bu" onchange="fBuChange()">${buSorted().map(b=>`<option value="${b.id}"${defBuId===b.id?' selected':''}>${b.name}</option>`).join('')}</select>
+        <select class="form-input" id="f-bu" onchange="fBuChange()">
+          <option value="all">전체 BU (다른 BU 포함 선택)</option>
+          ${buSorted().map(b=>`<option value="${b.id}"${defBuId===b.id?' selected':''}>${b.name}</option>`).join('')}
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">대상자 (복수 선택 가능)</label>
@@ -1228,7 +1231,8 @@ function openForm(editId=null){
   overlayEl.classList.add('show');
 
   // BU와 대상자 자동 세팅
-  if(defBuId) renderEmpList(defBuId, defSelected);
+  const initBu = defBuId || 'all';
+  renderEmpList(initBu, defSelected);
 
   renderDynamicFields(defCat, r);
 }
@@ -1236,14 +1240,31 @@ function openForm(editId=null){
 function renderEmpList(buId, selected=[]){
   const el=document.getElementById('f-emp-list');
   if(!el) return;
-  const emps=sortEmps(empsByBu(buId));
-  if(!emps.length){ el.innerHTML='<div style="padding:12px;color:var(--text3);font-size:13px">이 BU에 직원이 없습니다</div>'; return; }
-  el.innerHTML=emps.map(e=>`
-    <label class="emp-item">
-      <input type="checkbox" name="participants" value="${e.id}" ${selected.includes(e.id)?'checked':''}>
-      <span class="emp-pos">${e.position}</span>
-      <span style="font-size:14px;font-weight:600">${e.name}</span>
-    </label>`).join('');
+  if(buId==='all'){
+    // 전체 BU 직원을 BU별 그룹으로 표시
+    let html='';
+    buSorted().forEach(b=>{
+      const emps=sortEmps(empsByBu(b.id));
+      if(!emps.length) return;
+      html+=`<div style="padding:6px 12px;font-size:11px;font-weight:700;color:var(--text2);background:var(--bg);border-bottom:1px solid var(--border)">${b.name}</div>`;
+      html+=emps.map(e=>`
+        <label class="emp-item">
+          <input type="checkbox" name="participants" value="${e.id}" ${selected.includes(e.id)?'checked':''}>
+          <span class="emp-pos">${e.position}</span>
+          <span style="font-size:14px;font-weight:600">${e.name}</span>
+        </label>`).join('');
+    });
+    el.innerHTML=html||'<div style="padding:12px;color:var(--text3);font-size:13px">직원이 없습니다</div>';
+  } else {
+    const emps=sortEmps(empsByBu(buId));
+    if(!emps.length){ el.innerHTML='<div style="padding:12px;color:var(--text3);font-size:13px">이 BU에 직원이 없습니다</div>'; return; }
+    el.innerHTML=emps.map(e=>`
+      <label class="emp-item">
+        <input type="checkbox" name="participants" value="${e.id}" ${selected.includes(e.id)?'checked':''}>
+        <span class="emp-pos">${e.position}</span>
+        <span style="font-size:14px;font-weight:600">${e.name}</span>
+      </label>`).join('');
+  }
 }
 
 function fBuChange(){
@@ -1373,7 +1394,10 @@ function submitForm(){
   const memo = document.getElementById('f-memo')?.value || '';
   const writerId = S.currentUser;
 
-  if(!buId){ showFormError('BU를 선택해주세요'); return; }
+  const userEmpBu = S.currentUser ? getEmp(S.currentUser).buId : '';
+  const finalBuId = (buId==='all') ? (userEmpBu||buId) : buId;
+
+  if(!finalBuId||finalBuId==='all'){ showFormError('BU를 선택해주세요'); return; }
   if(!checked.length){ showFormError('대상자를 선택해주세요'); return; }
 
   let startAt=null, endAt=null, expectedReturnAt=null;
@@ -1444,7 +1468,7 @@ function submitForm(){
   const existing = S.editingId ? S.records[S.editingId] : null;
 
   const rec = {
-    id, category:cat, buId, writerId: writerId||checked[0],
+    id, category:cat, buId:finalBuId, writerId: writerId||checked[0],
     participantIds:checked, startAt, endAt, expectedReturnAt,
     actualReturnAt: existing?.actualReturnAt || null,
     isDirectLeave, isDirectOut, halfPeriod, place, purpose, memo,
