@@ -621,7 +621,7 @@ function renderDashboard(){
   const tomorrow=new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
   const recs=Object.values(S.records);
   const todayRecs=recs.filter(r=>{
-    if(r.category==='vacation'){
+    if(r.category==='vacation'||r.category==='biz_trip'){
       const startDay=kstOf(r.startAt); startDay.setHours(0,0,0,0);
       const endDay=r.endAt?kstOf(r.endAt):kstOf(r.startAt); endDay.setHours(23,59,59,999);
       return startDay.getTime()<=today.getTime() && endDay.getTime()>=today.getTime();
@@ -677,9 +677,11 @@ function renderDashboard(){
     upcoming.forEach(r=>html+=buildRecCard(r));
   }
 
-  if(vacToday.length||halfToday.length||earlyToday.length){
+  const bizToday=todayRecs.filter(r=>r.category==='biz_trip');
+
+  if(vacToday.length||halfToday.length||earlyToday.length||bizToday.length){
     html+=`<div class="section-title">📋 오늘 자리비움</div>`;
-    [...vacToday,...halfToday,...earlyToday].forEach(r=>html+=buildRecCard(r));
+    [...bizToday,...vacToday,...halfToday,...earlyToday].forEach(r=>html+=buildRecCard(r));
   }
 
   const pastToday=todayRecs.filter(r=>isPast(r));
