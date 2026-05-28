@@ -1353,7 +1353,9 @@ function renderDynamicFields(cat, r=null){
       <div class="form-group"><label class="form-label">출장지 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-place" placeholder="예: 부산, 대구, 일본 도쿄" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 방문, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else if(cat==='direct_out'){
-    html=timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정 시간', false)+`
+    html=`
+      <div class="form-group"><label class="form-label">날짜 <span style="color:#DC2626">*</span></label><input type="date" class="form-input" id="f-direct-out-date" value="${r?.startAt?kstOf(r.startAt).toISOString().slice(0,10):dateInputDefault()}"></div>`+
+      timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정 시간', false)+`
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 전시회 참관" value="${r?.purpose||''}"></div>`;
@@ -1445,12 +1447,15 @@ function submitForm(){
     if(isDirectOutVal) place = place; // placeholder, handled below
 
   } else if(cat === 'direct_out'){
+    const directDate = document.getElementById('f-direct-out-date')?.value;
+    if(!directDate){ showFormError('날짜를 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('목적을 입력해주세요'); return; }
-    expectedReturnAt = readTimePicker('f-return');
+    startAt = parseLocalDT(directDate+'T09:00');
+    const retTs = readTimePicker('f-return');
+    if(retTs) expectedReturnAt = retTs;
     isDirectLeave = document.getElementById('f-direct')?.checked || false;
     place = (document.getElementById('f-place')?.value || '').trim();
-    startAt = Date.now(); // 직출은 오늘 기준
 
   } else {
     startAt = readTimePicker('f-start');
