@@ -469,7 +469,15 @@ function calcStatus(r){
     if(r.expectedReturnAt && r.expectedReturnAt < now) return 'returned';
     return 'out';
   }
-  // 외출/출장
+  if(r.category==='biz_trip'){
+    if(r.startAt > now) return 'sched';
+    // 종료일(endAt) 자정이 지나야 완료
+    const endDay = r.endAt ? kstOf(r.endAt) : kstOf(r.startAt);
+    endDay.setHours(23,59,59,999);
+    if(endDay.getTime() < now) return 'returned';
+    return 'out';
+  }
+  // 외출
   if(r.actualReturnAt) return 'returned';
   if(!r.startAt) return 'sched';
   if(r.startAt > now) return 'sched';
@@ -1341,14 +1349,32 @@ function renderDynamicFields(cat, r=null){
   } else if(cat==='biz_trip'){
     const startDateVal = r?.startAt ? kstOf(r.startAt).toISOString().slice(0,10) : dateInputDefault();
     const endDateVal = r?.endAt ? kstOf(r.endAt).toISOString().slice(0,10) : dateInputDefault();
+    const chkOut = r?.isDirectOut||false;
+    const chkLeave = r?.isDirectLeave||false;
     html=`
       <div class="form-row">
         <div class="form-group"><label class="form-label">출발일 <span style="color:#DC2626">*</span></label><input type="date" class="form-input" id="f-biz-start" value="${startDateVal}"></div>
         <div class="form-group"><label class="form-label">복귀 예정일</label><input type="date" class="form-input" id="f-biz-end" value="${endDateVal}"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
-        <label class="check-item"><input type="checkbox" id="f-biz-direct-out" ${r?.isDirectOut?'checked':''}><span class="check-label">📍 직출</span></label>
-        <label class="check-item"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">🏠 직퇴</span></label>
+      <div class="form-group">
+        <label class="form-label">출발 방식 <span style="color:#DC2626">*</span></label>
+        <label class="check-item" style="margin-bottom:8px">
+          <input type="checkbox" id="f-biz-direct-out" onchange="document.getElementById('f-biz-start-time').style.display=this.checked?'none':'block'" ${chkOut?'checked':''}>
+          <span class="check-label">📍 직출 (출근 없이 바로 출발)</span>
+        </label>
+        <div id="f-biz-start-time" style="${chkOut?'display:none':''}">
+          ${timePickerHTML('f-start', (!chkOut&&r?.startAt)?r.startAt:null, '출발 시간', false)}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">복귀 방식 <span style="color:#DC2626">*</span></label>
+        <label class="check-item" style="margin-bottom:8px">
+          <input type="checkbox" id="f-direct" onchange="document.getElementById('f-biz-return-time').style.display=this.checked?'none':'block'" ${chkLeave?'checked':''}>
+          <span class="check-label">🏠 직퇴 (사무실 복귀 없이 퇴근)</span>
+        </label>
+        <div id="f-biz-return-time" style="${chkLeave?'display:none':''}">
+          ${timePickerHTML('f-return', (!chkLeave&&r?.expectedReturnAt)?r.expectedReturnAt:null, '복귀 시간', false)}
+        </div>
       </div>
       <div class="form-group"><label class="form-label">출장지 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-place" placeholder="예: 부산, 대구, 일본 도쿄" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 방문, 전시회 참관" value="${r?.purpose||''}"></div>`;
@@ -1433,18 +1459,20 @@ function submitForm(){
     const bizStart = document.getElementById('f-biz-start')?.value;
     const bizEnd = document.getElementById('f-biz-end')?.value;
     if(!bizStart){ showFormError('출발일을 입력해주세요'); return; }
+    const isDirectOutVal = document.getElementById('f-biz-direct-out')?.checked || false;
+    const isDirectLeaveVal = document.getElementById('f-direct')?.checked || false;
+    const startTs = isDirectOutVal ? null : readTimePicker('f-start');
+    const returnTs = isDirectLeaveVal ? null : readTimePicker('f-return');
+    if(!isDirectOutVal && !startTs){ showFormError('직출 또는 출발 시간을 입력해주세요'); return; }
+    if(!isDirectLeaveVal && !returnTs){ showFormError('직퇴 또는 복귀 시간을 입력해주세요'); return; }
     place = (document.getElementById('f-place')?.value || '').trim();
     if(!place){ showFormError('출장지를 입력해주세요'); return; }
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('목적을 입력해주세요'); return; }
-    startAt = parseLocalDT(bizStart+'T09:00');
+    startAt = isDirectOutVal ? parseLocalDT(bizStart+'T09:00') : startTs;
     endAt = parseLocalDT((bizEnd||bizStart)+'T23:59');
-    isDirectLeave = document.getElementById('f-direct')?.checked || false;
-    const isDirectOutVal = document.getElementById('f-biz-direct-out')?.checked || false;
-    // isDirectOut을 rec에 저장하기 위해 place 필드 활용 대신 별도 플래그 사용
-    place = (document.getElementById('f-place')?.value || '').trim();
-    // isDirectOut 플래그는 rec 생성 시 추가
-    if(isDirectOutVal) place = place; // placeholder, handled below
+    expectedReturnAt = returnTs;
+    isDirectLeave = isDirectLeaveVal;
 
   } else if(cat === 'direct_out'){
     const directDate = document.getElementById('f-direct-out-date')?.value;
