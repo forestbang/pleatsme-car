@@ -624,6 +624,15 @@ function renderApp(){
 // ═══════════════════════════════════════════
 // 대시보드
 // ═══════════════════════════════════════════
+function dashToggle(type){
+  const map = {out:'dash-detail-out', vac:'dash-detail-vac', half:'dash-detail-half', early:'dash-detail-early'};
+  const el = document.getElementById(map[type]);
+  if(!el) return;
+  const visible = el.style.display !== 'none';
+  el.style.display = visible ? 'none' : 'block';
+  el.style.transition = 'all .2s';
+  if(!visible) el.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
 function renderDashboard(){
   const today=todayKST();
   const tomorrow=new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
@@ -666,17 +675,34 @@ function renderDashboard(){
 
   let html=`
   <div class="summary-grid">
-    <div class="summary-card"><div class="summary-label">🚗 현재 외출중</div><div class="summary-num active">${countOut}명</div></div>
-    <div class="summary-card"><div class="summary-label">🏖 오늘 휴가</div><div class="summary-num blue">${countV}명</div></div>
-    <div class="summary-card"><div class="summary-label">🌓 오늘 반차</div><div class="summary-num amber">${countH}명</div></div>
-    <div class="summary-card"><div class="summary-label">🏠 오늘 조퇴</div><div class="summary-num pink">${countE}명</div></div>
+    <div class="summary-card" onclick="dashToggle('out')" style="cursor:pointer;transition:.15s" onmouseenter="this.style.transform='scale(1.02)'" onmouseleave="this.style.transform=''">
+      <div class="summary-label">🚗 현재 외출중</div>
+      <div class="summary-num active">${countOut}명</div>
+      ${countOut>0?`<div style="font-size:10px;color:var(--text3);margin-top:4px">탭하여 보기</div>`:''}
+    </div>
+    <div class="summary-card" onclick="dashToggle('vac')" style="cursor:pointer;transition:.15s" onmouseenter="this.style.transform='scale(1.02)'" onmouseleave="this.style.transform=''">
+      <div class="summary-label">🏖 오늘 휴가</div>
+      <div class="summary-num blue">${countV}명</div>
+      ${countV>0?`<div style="font-size:10px;color:var(--text3);margin-top:4px">탭하여 보기</div>`:''}
+    </div>
+    <div class="summary-card" onclick="dashToggle('half')" style="cursor:pointer;transition:.15s" onmouseenter="this.style.transform='scale(1.02)'" onmouseleave="this.style.transform=''">
+      <div class="summary-label">🌓 오늘 반차</div>
+      <div class="summary-num amber">${countH}명</div>
+      ${countH>0?`<div style="font-size:10px;color:var(--text3);margin-top:4px">탭하여 보기</div>`:''}
+    </div>
+    <div class="summary-card" onclick="dashToggle('early')" style="cursor:pointer;transition:.15s" onmouseenter="this.style.transform='scale(1.02)'" onmouseleave="this.style.transform=''">
+      <div class="summary-label">🏠 오늘 조퇴</div>
+      <div class="summary-num pink">${countE}명</div>
+      ${countE>0?`<div style="font-size:10px;color:var(--text3);margin-top:4px">탭하여 보기</div>`:''}
+    </div>
   </div>
   ${directOutToday.length>0?`<div class="card" style="margin-bottom:12px;border-left:4px solid var(--direct-out)"><div style="font-size:12px;color:var(--direct-out-t);font-weight:700;margin-bottom:4px">📍 오늘 직출</div><div style="font-size:14px;font-weight:600">${directOutToday.map(r=>getParticipantNames(r.participantIds)).join(' / ')}</div></div>`:''}
   `;
 
   if(countOut>0){
-    html+=`<div class="section-title">🟠 지금 외출 중</div>`;
+    html+=`<div class="section-title" id="dash-sec-out">🟠 지금 외출 중</div><div id="dash-detail-out">`;
     outNow.forEach(r=>{ html+=buildRecCard(r, true); });
+    html+=`</div>`;
   }
 
   const upcoming=todayRecs.filter(r=>calcStatus(r)==='sched');
@@ -689,7 +715,14 @@ function renderDashboard(){
 
   if(vacToday.length||halfToday.length||earlyToday.length||bizToday.length){
     html+=`<div class="section-title">📋 오늘 자리비움</div>`;
-    [...bizToday,...vacToday,...halfToday,...earlyToday].forEach(r=>html+=buildRecCard(r));
+    html+=`<div id="dash-detail-vac">`;
+    vacToday.forEach(r=>html+=buildRecCard(r));
+    html+=`</div><div id="dash-detail-half">`;
+    halfToday.forEach(r=>html+=buildRecCard(r));
+    html+=`</div><div id="dash-detail-early">`;
+    earlyToday.forEach(r=>html+=buildRecCard(r));
+    html+=`</div>`;
+    bizToday.forEach(r=>html+=buildRecCard(r));
   }
 
   const pastToday=todayRecs.filter(r=>isPast(r));
