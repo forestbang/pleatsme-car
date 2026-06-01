@@ -570,7 +570,10 @@ function setupBuChange(){
     .forEach(e=>sel.innerHTML+=`<option value="${e.id}">${e.position} ${e.name}</option>`);
 }
 function populateSetup(){
+  // S.bus가 비어있으면 로컬에서 강제 로드
+  if(!S.bus || Object.keys(S.bus).length===0) loadLocalData();
   const bu=document.getElementById('setup-bu');
+  if(!bu) return;
   bu.innerHTML='<option value="">소속 BU를 선택하세요</option>';
   buSorted().forEach(b=>bu.innerHTML+=`<option value="${b.id}">${b.name}</option>`);
 }
@@ -1672,8 +1675,18 @@ window.addEventListener('DOMContentLoaded',()=>{
       if(S.currentUser && S.employees[S.currentUser]){
         updateHeaderUser();
         renderApp();
-      } else if(!S.currentUser){
-        populateSetup();
+      } else {
+        // 저장된 사용자가 없거나 직원 목록에 없으면 setup 재표시
+        const sv = localStorage.getItem('pm_user');
+        if(sv && S.employees[sv]){
+          S.currentUser = sv;
+          document.getElementById('setup-screen').classList.add('hidden');
+          document.getElementById('app').style.display='';
+          updateHeaderUser();
+          renderApp();
+        } else {
+          populateSetup();
+        }
       }
     }, err=>{
       console.warn('Firebase 읽기 실패:', err);
