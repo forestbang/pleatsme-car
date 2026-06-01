@@ -1643,12 +1643,11 @@ window.addEventListener('DOMContentLoaded',()=>{
   }
 
   const savedUser = localStorage.getItem('pm_user');
+  let appStarted = false; // 최초 1회만 setup 처리
 
   if(S.fbOk) {
-    // Firebase에서 데이터 로드 후 실시간 구독
     S.db.ref('outing').on('value', snap => {
       const d = snap.val() || {};
-      // BU/직원 초기 데이터가 없으면 기본값 넣기
       if(!d.bus) {
         const bus={}, emp={};
         INIT_BUS.forEach(b=>{ bus[b.id]={...b,active:true}; });
@@ -1662,25 +1661,37 @@ window.addEventListener('DOMContentLoaded',()=>{
         S.records = d.records||{};
       }
       saveLocal();
-      // 사용자 복원
-      if(savedUser && S.employees[savedUser]) {
-        S.currentUser = savedUser;
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('app').style.display='';
-      } else {
-        populateSetup();
+
+      // 최초 1회만 로그인 처리
+      if(!appStarted){
+        appStarted = true;
+        if(savedUser && S.employees[savedUser]) {
+          S.currentUser = savedUser;
+          document.getElementById('setup-screen').classList.add('hidden');
+          document.getElementById('app').style.display='';
+        } else {
+          populateSetup();
+        }
       }
       updateHeaderUser();
       renderApp();
     }, err => {
       console.warn('Firebase 읽기 실패, 로컬 모드:', err);
       loadLocalData();
-      populateSetup();
+      if(!appStarted){
+        appStarted = true;
+        if(savedUser && S.employees[savedUser]) {
+          S.currentUser = savedUser;
+          document.getElementById('setup-screen').classList.add('hidden');
+          document.getElementById('app').style.display='';
+        } else {
+          populateSetup();
+        }
+      }
       renderApp();
     });
 
   } else {
-    // 로컬 모드
     loadLocalData();
     if(savedUser && S.employees[savedUser]) {
       S.currentUser = savedUser;
