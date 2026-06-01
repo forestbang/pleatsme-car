@@ -1633,7 +1633,19 @@ function showToast(msg){
 // 앱 시작
 // ═══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
-  // Firebase 먼저 초기화
+  // 1단계: 로컬 데이터 먼저 로드해서 즉시 화면 표시
+  loadLocalData();
+  const savedUser = localStorage.getItem('pm_user');
+  if(savedUser && S.employees[savedUser]){
+    S.currentUser = savedUser;
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('app').style.display='';
+    renderApp();
+  } else {
+    populateSetup();
+  }
+
+  // 2단계: Firebase 연결해서 실시간 동기화
   try {
     firebase.initializeApp(FIREBASE_CONFIG);
     S.db = firebase.database();
@@ -1642,13 +1654,10 @@ window.addEventListener('DOMContentLoaded',()=>{
     console.warn('Firebase 초기화 실패, 로컬 모드');
   }
 
-  const savedUser = localStorage.getItem('pm_user');
-  let appStarted = false; // 최초 1회만 setup 처리
-
-  if(S.fbOk) {
+  if(S.fbOk){
     S.db.ref('outing').on('value', snap => {
       const d = snap.val() || {};
-      if(!d.bus) {
+      if(!d.bus){
         const bus={}, emp={};
         INIT_BUS.forEach(b=>{ bus[b.id]={...b,active:true}; });
         INIT_EMPLOYEES.forEach(e=>{ emp[e.id]={...e,active:true,createdAt:Date.now()}; });
@@ -1661,46 +1670,16 @@ window.addEventListener('DOMContentLoaded',()=>{
         S.records = d.records||{};
       }
       saveLocal();
-
-      // 최초 1회만 로그인 처리
-      if(!appStarted){
-        appStarted = true;
-        if(savedUser && S.employees[savedUser]) {
-          S.currentUser = savedUser;
-          document.getElementById('setup-screen').classList.add('hidden');
-          document.getElementById('app').style.display='';
-        } else {
-          populateSetup();
-        }
+      // Firebase 데이터로 갱신 후 재렌더
+      if(S.currentUser && S.employees[S.currentUser]){
+        updateHeaderUser();
+        renderApp();
+      } else if(!S.currentUser){
+        populateSetup();
       }
-      updateHeaderUser();
-      renderApp();
-    }, err => {
-      console.warn('Firebase 읽기 실패, 로컬 모드:', err);
-      loadLocalData();
-      if(!appStarted){
-        appStarted = true;
-        if(savedUser && S.employees[savedUser]) {
-          S.currentUser = savedUser;
-          document.getElementById('setup-screen').classList.add('hidden');
-          document.getElementById('app').style.display='';
-        } else {
-          populateSetup();
-        }
-      }
-      renderApp();
+    }, err=>{
+      console.warn('Firebase 읽기 실패:', err);
     });
-
-  } else {
-    loadLocalData();
-    if(savedUser && S.employees[savedUser]) {
-      S.currentUser = savedUser;
-      document.getElementById('setup-screen').classList.add('hidden');
-      document.getElementById('app').style.display='';
-    } else {
-      populateSetup();
-    }
-    renderApp();
   }
 
   setInterval(()=>{ if(S.tab==='dashboard') renderDashboard(); }, 60000);
