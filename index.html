@@ -493,22 +493,30 @@ function renderReserve(){
       </div>
       <div class="dt-block">
         <div class="dt-label">🚀 출발</div>
-        <div class="dt-inner">
-          <div class="fgroup"><label>날짜</label><input type="date" value="${f.startDate}" min="${todayStr()}" onchange="SF('startDate',this.value);S.tlDate=this.value;if(S.form.endDate<this.value)SF('endDate',this.value);render()"></div>
-          <div class="fgroup"><label>시간</label><select onchange="SF('startTime',this.value);render()" style="font-size:16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
-            <option value="">선택</option>
-            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;const ampm=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;const label=`${ampm} ${String(h12).padStart(2,'0')}:${m}`;return`<option value="${t}" ${f.startTime===t?'selected':''}>${label}</option>`;}).join('')).join('')}
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;">
+          <div class="fgroup" style="margin-bottom:0"><label>날짜</label><input type="date" value="${f.startDate}" min="${todayStr()}" onchange="SF('startDate',this.value);S.tlDate=this.value;if(S.form.endDate<this.value)SF('endDate',this.value);render()"></div>
+          <div class="fgroup" style="margin-bottom:0"><label>시</label><select onchange="setSH(this.value);render()" style="font-size:15px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 8px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
+            <option value="">--</option>
+            ${Array.from({length:24},(_,h)=>{const ampm=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;const hv=String(h).padStart(2,'0');const sel=f.startTime&&f.startTime.split(':')[0]===hv?'selected':'';return`<option value="${hv}" ${sel}>${ampm} ${String(h12).padStart(2,'0')}</option>`;}).join('')}
+          </select></div>
+          <div class="fgroup" style="margin-bottom:0"><label>분</label><select onchange="setSM(this.value);render()" style="font-size:15px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 8px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
+            <option value="">--</option>
+            ${['00','10','20','30','40','50'].map(m=>{const sel=f.startTime&&f.startTime.split(':')[1]===m?'selected':'';return`<option value="${m}" ${sel}>${m}분</option>`;}).join('')}
           </select></div>
         </div>
       </div>
       <div class="dt-sep">↓</div>
       <div class="dt-block">
         <div class="dt-label">🏁 반납</div>
-        <div class="dt-inner">
-          <div class="fgroup"><label>날짜</label><input type="date" value="${f.endDate}" min="${f.startDate||todayStr()}" onchange="SF('endDate',this.value);render()"></div>
-          <div class="fgroup"><label>시간</label><select onchange="SF('endTime',this.value);render()" style="font-size:16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
-            <option value="">선택</option>
-            ${Array.from({length:24},(_,h)=>['00','10','20','30','40','50'].map(m=>{const t=String(h).padStart(2,'0')+':'+m;const ampm=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;const label=`${ampm} ${String(h12).padStart(2,'0')}:${m}`;return`<option value="${t}" ${f.endTime===t?'selected':''}>${label}</option>`;}).join('')).join('')}
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;">
+          <div class="fgroup" style="margin-bottom:0"><label>날짜</label><input type="date" value="${f.endDate}" min="${f.startDate||todayStr()}" onchange="SF('endDate',this.value);render()"></div>
+          <div class="fgroup" style="margin-bottom:0"><label>시</label><select onchange="setEH(this.value);render()" style="font-size:15px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 8px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
+            <option value="">--</option>
+            ${Array.from({length:24},(_,h)=>{const ampm=h<12?'AM':'PM';const h12=h===0?12:h>12?h-12:h;const hv=String(h).padStart(2,'0');const sel=f.endTime&&f.endTime.split(':')[0]===hv?'selected':'';return`<option value="${hv}" ${sel}>${ampm} ${String(h12).padStart(2,'0')}</option>`;}).join('')}
+          </select></div>
+          <div class="fgroup" style="margin-bottom:0"><label>분</label><select onchange="setEM(this.value);render()" style="font-size:15px;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 8px;color:var(--text);background:var(--card);width:100%;-webkit-appearance:none;">
+            <option value="">--</option>
+            ${['00','10','20','30','40','50'].map(m=>{const sel=f.endTime&&f.endTime.split(':')[1]===m?'selected':'';return`<option value="${m}" ${sel}>${m}분</option>`;}).join('')}
           </select></div>
         </div>
       </div>
@@ -833,6 +841,10 @@ function selectVehicle(id){
   SF('vehicleId',id);render();
 }
 function SF(k,v){S.form[k]=v;}
+function setSH(h){ const m=S.form.startTime?S.form.startTime.split(':')[1]:'00'; SF('startTime',h?(h+':'+(m||'00')):''); }
+function setSM(m){ const h=S.form.startTime?S.form.startTime.split(':')[0]:''; SF('startTime',h?(h+':'+m):''); }
+function setEH(h){ const m=S.form.endTime?S.form.endTime.split(':')[1]:'00'; SF('endTime',h?(h+':'+(m||'00')):''); }
+function setEM(m){ const h=S.form.endTime?S.form.endTime.split(':')[0]:''; SF('endTime',h?(h+':'+m):''); }
 function MF(k,v){S.maintForm[k]=v;}
 function tlPrev(){S.tlDate=addDays(S.tlDate,-1);render();}
 function tlNext(){S.tlDate=addDays(S.tlDate,1);render();}
