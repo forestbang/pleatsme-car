@@ -722,8 +722,6 @@ function renderDashboard(){
     upcoming.forEach(r=>html+=buildRecCard(r));
   }
 
-  const bizToday=todayRecs.filter(r=>r.category==='biz_trip');
-
   if(vacToday.length||halfToday.length||earlyToday.length||bizToday.length){
     html+=`<div class="section-title">📋 오늘 자리비움</div>`;
     html+=`<div id="dash-detail-biz">`;
