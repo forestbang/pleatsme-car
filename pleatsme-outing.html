@@ -1529,8 +1529,12 @@ function submitForm(){
     purpose = (document.getElementById('f-purpose')?.value || '').trim();
     if(!purpose){ showFormError('목적을 입력해주세요'); return; }
     startAt = parseLocalDT(directDate+'T09:00');
-    const retTs = readTimePicker('f-return');
-    if(retTs) expectedReturnAt = retTs;
+    // 귀사 시간에 직출 날짜 조합 (시간만 선택하므로 날짜를 직출 날짜로 고정)
+    const retH = document.getElementById('f-return-h')?.value;
+    const retM = document.getElementById('f-return-m')?.value;
+    if(retH !== null && retH !== undefined && retH !== ''){
+      expectedReturnAt = parseLocalDT(directDate+'T'+String(retH).padStart(2,'0')+':'+String(retM||0).padStart(2,'0'));
+    }
     isDirectLeave = document.getElementById('f-direct')?.checked || false;
     place = (document.getElementById('f-place')?.value || '').trim();
 
