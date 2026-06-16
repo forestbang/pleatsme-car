@@ -1341,9 +1341,20 @@ function selectCat(cat){
 }
 
 // ── 10분 단위 시간 선택기 ───────────────────────────
-function timePickerHTML(idPrefix, ts=null, label='시간', required=false){
+function syncReturnDate(val){
+  // 외출: 귀사 날짜를 출발 날짜와 동일하게 고정
+  const el = document.getElementById('f-return-date');
+  if(el){ el.min = val; el.value = val; }
+}
+function setReturnDateMin(val){
+  // 직출: 귀사 날짜의 최소값만 설정 (이후 날짜 자유 선택)
+  const el = document.getElementById('f-return-date');
+  if(el){ el.min = val; if(!el.value || el.value < val) el.value = val; }
+}
+
+function timePickerHTML(idPrefix, ts=null, label='시간', required=false, dateOnChange=''){
   const d = ts ? kstOf(ts) : kstNow();
-  if(!ts){ // 기본값: 현재 시각에서 10분 올림
+  if(!ts){
     const m = Math.ceil(d.getMinutes()/10)*10;
     if(m>=60){ d.setHours(d.getHours()+1); d.setMinutes(0); } else { d.setMinutes(m); }
   }
@@ -1354,11 +1365,12 @@ function timePickerHTML(idPrefix, ts=null, label='시간', required=false){
   for(let h=0;h<24;h++) hOpts+=`<option value="${h}" ${curH===h?'selected':''}>${String(h).padStart(2,'0')}시</option>`;
   [0,10,20,30,40,50].forEach(m=>mOpts+=`<option value="${m}" ${curM===m?'selected':''}>${String(m).padStart(2,'0')}분</option>`);
   const star = required ? ' <span style="color:#DC2626">*</span>' : '';
+  const onch = dateOnChange ? `onchange="${dateOnChange}"` : '';
   return `
     <div class="form-group">
       <label class="form-label">${label}${star}</label>
       <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:6px">
-        <input type="date" class="form-input" id="${idPrefix}-date" value="${curDate}">
+        <input type="date" class="form-input" id="${idPrefix}-date" value="${curDate}" ${onch}>
         <select class="form-input" id="${idPrefix}-h" style="padding:11px 6px">${hOpts}</select>
         <select class="form-input" id="${idPrefix}-m" style="padding:11px 6px">${mOpts}</select>
       </div>
@@ -1428,14 +1440,15 @@ function renderDynamicFields(cat, r=null){
       <div class="form-group"><label class="form-label">출장지 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-place" placeholder="예: 부산, 대구, 일본 도쿄" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 방문, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else if(cat==='direct_out'){
+    const doDate = r?.startAt ? kstOf(r.startAt).toISOString().slice(0,10) : dateInputDefault();
     html=`
-      <div class="form-group"><label class="form-label">날짜 <span style="color:#DC2626">*</span></label><input type="date" class="form-input" id="f-direct-out-date" value="${r?.startAt?kstOf(r.startAt).toISOString().slice(0,10):dateInputDefault()}"></div>`+
-      timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정 시간', false)+`
+      <div class="form-group"><label class="form-label">날짜 <span style="color:#DC2626">*</span></label><input type="date" class="form-input" id="f-direct-out-date" value="${doDate}" onchange="setReturnDateMin(this.value)"></div>`+
+      timePickerHTML('f-return', r?.expectedReturnAt||parseLocalDT(doDate+'T18:00'), '귀사 예정 시간', false)+`
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else { // outing
-    html=timePickerHTML('f-start', r?.startAt, '출발 시간', true)+
+    html=timePickerHTML('f-start', r?.startAt, '출발 시간', true, 'syncReturnDate(this.value)')+
          timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정', false)+`
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 상암 사무소" value="${r?.place||''}"></div>
