@@ -464,12 +464,11 @@ function calcStatus(r){
   }
   if(r.category==='direct_out'){
     if(r.actualReturnAt) return 'returned';
-    // 당일이 지나면 자동 완료
+    if(!r.startAt || r.startAt > now) return 'sched';
     const startDay = kstOf(r.startAt); startDay.setHours(0,0,0,0);
     const todayDay = todayKST();
     if(startDay.getTime() < todayDay.getTime()) return 'returned';
     if(r.isDirectLeave) return 'direct';
-    if(!r.startAt || r.startAt > now) return 'sched';
     if(r.expectedReturnAt && r.expectedReturnAt < now) return 'returned';
     return 'out';
   }
