@@ -649,7 +649,11 @@ function renderDashboard(){
     const s=kstOf(r.startAt); s.setHours(0,0,0,0);
     return s.getTime()===today.getTime();
   });
-  const outNow=recs.filter(r=>isActiveOut(r));
+  const outNow=recs.filter(r=>{
+    if(!isActiveOut(r)) return false;
+    const startDay = kstOf(r.startAt); startDay.setHours(0,0,0,0);
+    return startDay.getTime() <= todayKST().getTime();
+  });
   const todayMs = today.getTime();
   const tomorrowMs = tomorrow.getTime();
   // 오늘 날짜에 걸쳐있는 휴가 (시작일<=오늘<=종료일 이고 시작일이 오늘 이전이거나 같은날)
