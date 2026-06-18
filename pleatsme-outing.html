@@ -514,7 +514,7 @@ function isPast(r){
 }
 function isActiveOut(r){
   const s = calcStatus(r);
-  return s==='out' || (r.category==='direct_out' && s==='direct');
+  return s==='out' || s==='direct';
 }
 
 // ── 직원/BU 조회 ──────────────────────────────────
@@ -741,7 +741,7 @@ function renderDashboard(){
 
   const pastToday=todayRecs.filter(r=>isPast(r));
   if(pastToday.length>0){
-    html+=`<div class="section-title">✅ 오늘 완료</div>`;
+    html+=`<div class="section-title">✅ 오늘 완료 <span style="font-size:11px;color:var(--text3);font-weight:400">(아직 외출중이면 ↩ 되돌리기 버튼 누르세요)</span></div>`;
     pastToday.forEach(r=>html+=buildRecCard(r,false,true));
   }
 
@@ -1446,8 +1446,9 @@ function renderDynamicFields(cat, r=null){
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 거래처 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 전시회 참관" value="${r?.purpose||''}"></div>`;
   } else { // outing
+    const returnDefault = r?.expectedReturnAt || (Date.now() + 2*60*60*1000);
     html=timePickerHTML('f-start', r?.startAt, '출발 시간', true, 'syncReturnDate(this.value)')+
-         timePickerHTML('f-return', r?.expectedReturnAt, '귀사 예정', false)+`
+         timePickerHTML('f-return', returnDefault, '귀사 예정', false)+`
       <label class="check-item" style="margin-bottom:16px"><input type="checkbox" id="f-direct" ${r?.isDirectLeave?'checked':''}><span class="check-label">직퇴 (회사로 돌아오지 않음)</span></label>
       <div class="form-group"><label class="form-label">장소</label><input type="text" class="form-input" id="f-place" placeholder="예: 동대문, 상암 사무소" value="${r?.place||''}"></div>
       <div class="form-group"><label class="form-label">목적 <span style="color:#DC2626">*</span></label><input type="text" class="form-input" id="f-purpose" placeholder="예: 거래처 미팅, 물류센터" value="${r?.purpose||''}"></div>`;
