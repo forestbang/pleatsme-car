@@ -632,12 +632,9 @@ function renderApp(){
 // 대시보드
 // ═══════════════════════════════════════════
 function dashToggle(type){
-  const map = {out:'dash-detail-out', vac:'dash-detail-vac', half:'dash-detail-half', early:'dash-detail-early', biz:'dash-detail-biz'};
-  const el = document.getElementById(map[type]);
-  if(!el) return;
-  const visible = el.style.display !== 'none';
-  el.style.display = visible ? 'none' : 'block';
-  if(!visible) el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  if(!S.dashHidden) S.dashHidden={};
+  S.dashHidden[type] = !S.dashHidden[type];
+  renderDashboard();
 }
 function renderDashboard(){
   const today=todayKST();
@@ -717,7 +714,8 @@ function renderDashboard(){
   `;
 
   if(countOut>0){
-    html+=`<div class="section-title" id="dash-sec-out">🟠 지금 외출 중</div><div id="dash-detail-out">`;
+    const outHidden = S.dashHidden?.out;
+    html+=`<div class="section-title" id="dash-sec-out">🟠 지금 외출 중</div><div id="dash-detail-out" style="${outHidden?'display:none':''}">`;
     outNow.forEach(r=>{ html+=buildRecCard(r, true); });
     html+=`</div>`;
   }
@@ -730,13 +728,13 @@ function renderDashboard(){
 
   if(vacToday.length||halfToday.length||earlyToday.length||bizToday.length){
     html+=`<div class="section-title">📋 오늘 자리비움</div>`;
-    html+=`<div id="dash-detail-biz">`;
+    html+=`<div id="dash-detail-biz" style="${S.dashHidden?.biz?'display:none':''}">`;
     bizToday.forEach(r=>html+=buildRecCard(r));
-    html+=`</div><div id="dash-detail-vac">`;
+    html+=`</div><div id="dash-detail-vac" style="${S.dashHidden?.vac?'display:none':''}">`;
     vacToday.forEach(r=>html+=buildRecCard(r));
-    html+=`</div><div id="dash-detail-half">`;
+    html+=`</div><div id="dash-detail-half" style="${S.dashHidden?.half?'display:none':''}">`;
     halfToday.forEach(r=>html+=buildRecCard(r));
-    html+=`</div><div id="dash-detail-early">`;
+    html+=`</div><div id="dash-detail-early" style="${S.dashHidden?.early?'display:none':''}">`;
     earlyToday.forEach(r=>html+=buildRecCard(r));
     html+=`</div>`;
   }
