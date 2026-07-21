@@ -918,11 +918,31 @@ function renderCalendar(){
   // 날짜별 기록 집계
   const byDate={};
   Object.values(S.records).forEach(r=>{
-    const d=kstOf(r.startAt);
-    if(d.getFullYear()===y && d.getMonth()===m){
-      const k=d.getDate();
-      if(!byDate[k]) byDate[k]=[];
-      byDate[k].push(r);
+    const startD = kstOf(r.startAt);
+    const endD = r.endAt ? kstOf(r.endAt) : startD;
+    // 기간이 있는 카테고리(출장, 휴가)는 범위 내 모든 날짜에 추가
+    const isRange = ['vacation','biz_trip'].includes(r.category);
+    if(isRange){
+      // 현재 캘린더 월과 겹치는 날짜 범위만
+      const monthStart = new Date(y, m, 1);
+      const monthEnd = new Date(y, m+1, 0);
+      const rangeStart = startD < monthStart ? monthStart : startD;
+      const rangeEnd = endD > monthEnd ? monthEnd : endD;
+      const cur = new Date(rangeStart);
+      while(cur <= rangeEnd){
+        if(cur.getFullYear()===y && cur.getMonth()===m){
+          const k = cur.getDate();
+          if(!byDate[k]) byDate[k]=[];
+          if(!byDate[k].find(x=>x.id===r.id)) byDate[k].push(r);
+        }
+        cur.setDate(cur.getDate()+1);
+      }
+    } else {
+      if(startD.getFullYear()===y && startD.getMonth()===m){
+        const k=startD.getDate();
+        if(!byDate[k]) byDate[k]=[];
+        byDate[k].push(r);
+      }
     }
   });
 
@@ -1290,8 +1310,9 @@ function openForm(editId=null){
 
   overlayEl.classList.add('show');
 
-  // BU와 대상자 자동 세팅
-  const initBu = defBuId || 'all';
+  // 수정시엔 해당 BU, 신규등록시엔 항상 전체 BU로 시작
+  const initBu = r ? (defBuId || 'all') : 'all';
+  document.getElementById('f-bu').value = initBu;
   renderEmpList(initBu, defSelected);
 
   renderDynamicFields(defCat, r);
