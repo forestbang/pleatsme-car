@@ -918,18 +918,16 @@ function renderCalendar(){
   // 날짜별 기록 집계
   const byDate={};
   Object.values(S.records).forEach(r=>{
-    const startD = kstOf(r.startAt);
-    const endD = r.endAt ? kstOf(r.endAt) : startD;
-    // 기간이 있는 카테고리(출장, 휴가)는 범위 내 모든 날짜에 추가
+    const startD = kstOf(r.startAt); startD.setHours(0,0,0,0);
+    const endD = r.endAt ? kstOf(r.endAt) : kstOf(r.startAt); endD.setHours(0,0,0,0);
     const isRange = ['vacation','biz_trip'].includes(r.category);
     if(isRange){
-      // 현재 캘린더 월과 겹치는 날짜 범위만
       const monthStart = new Date(y, m, 1);
-      const monthEnd = new Date(y, m+1, 0);
+      const monthEnd = new Date(y, m+1, 0); monthEnd.setHours(0,0,0,0);
       const rangeStart = startD < monthStart ? monthStart : startD;
       const rangeEnd = endD > monthEnd ? monthEnd : endD;
-      const cur = new Date(rangeStart);
-      while(cur <= rangeEnd){
+      const cur = new Date(rangeStart); cur.setHours(0,0,0,0);
+      while(cur.getTime() <= rangeEnd.getTime()){
         if(cur.getFullYear()===y && cur.getMonth()===m){
           const k = cur.getDate();
           if(!byDate[k]) byDate[k]=[];
