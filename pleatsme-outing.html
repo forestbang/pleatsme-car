@@ -766,9 +766,19 @@ function buildRecCard(r, isActive=false, isPastCard=false){
   const writer=getEmp(r.writerId);
   const bu=getBU(r.buId);
   const isMe=r.writerId===S.currentUser || (r.participantIds||[]).includes(S.currentUser);
-  const canEdit=S.isAdmin||r.writerId===S.currentUser;
+  const canEdit=S.isAdmin||isMe;
+  const canDelete=S.isAdmin||isMe;
 
   let timeHtml='';
+  const hasAnyBtn = status==='out' || status==='returned' || status==='done' || canEdit || S.isAdmin;
+  if(hasAnyBtn){
+    let btnHtml='';
+    if(status==='out' && canEdit) btnHtml+=`<button class="rec-actions-btn btn-return" data-id="${r.id}" data-action="return">✅ 귀사처리</button>`;
+    if(r.category==='outing' && ['returned','done'].includes(status) && canEdit) btnHtml+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="undo" style="background:#EDE9FE;color:#5B21B6">↩ 되돌리기</button>`;
+    if(canEdit) btnHtml+=`<button class="rec-actions-btn btn-edit" data-id="${r.id}" data-action="edit">✏️ 수정</button>`;
+    if(canDelete) btnHtml+=`<button class="rec-actions-btn btn-delete" data-id="${r.id}" data-action="delete">🗑 삭제</button>`;
+    if(btnHtml) actions=`<div class="rec-actions">${btnHtml}</div>`;
+  }
   if(r.category==='outing'){
     timeHtml=`<span>🕐 ${fmtTime(r.startAt)}`;
     if(!r.isDirectLeave && r.expectedReturnAt) timeHtml+=` → ${fmtTime(r.expectedReturnAt)}`;
